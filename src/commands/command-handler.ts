@@ -2,11 +2,14 @@ import { readdirSync } from 'fs';
 import { join } from 'path';
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { Routes } from 'discord-api-types/v9';
-import { Interaction } from 'discord.js';
+import { CommandInteraction } from 'discord.js';
 import { Client } from '../extensions';
 import { logger } from '../services';
 
-export const loadCommands = async (client: Client) => {
+export const loadCommands = async (
+    client: Client,
+    shouldUpdateCommands: boolean = true
+) => {
     const ignoredFiles = ['command-handler.js'];
 
     readdirSync(__dirname)
@@ -26,9 +29,14 @@ export const loadCommands = async (client: Client) => {
                 }
             }
         });
-    await client.restClient.put(Routes.applicationCommands(client.user.id), {
-        body: client.commands.map((cmd) => cmd.builder.toJSON())
-    });
+
+    if (shouldUpdateCommands)
+        await client.restClient.put(
+            Routes.applicationCommands(client.user.id),
+            {
+                body: client.commands.map((cmd) => cmd.builder.toJSON())
+            }
+        );
 };
 
 export interface Command {
@@ -36,5 +44,5 @@ export interface Command {
         | SlashCommandBuilder
         | Omit<SlashCommandBuilder, 'addSubcommand' | 'addSubcommandGroup'>;
 
-    run(client: Client, interaction: Interaction): void;
+    run(client: Client, interaction: CommandInteraction): void;
 }

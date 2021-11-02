@@ -6,10 +6,8 @@ export const command: Command = {
         .setName('ping')
         .setDescription('Get informations about the bot'),
     run(client, interaction) {
-        if (!interaction.isCommand()) return;
         interaction.reply({
-            content: 'Pong!',
-            ephemeral: true
+            content: 'Pong!'
         });
     }
 };
