@@ -7,5 +7,9 @@ export const command: Command = {
         .setDescription('Get informations about the bot'),
     run(client, interaction) {
         if (!interaction.isCommand()) return;
+        interaction.reply({
+            content: 'Pong!',
+            ephemeral: true
+        });
     }
 };

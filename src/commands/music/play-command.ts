@@ -25,7 +25,13 @@ export const command: Command = {
                     ['Artist', 'artist']
                 ])
         ),
-    run(client, interaction) {
+    async run(client, interaction) {
         if (!interaction.isCommand()) return;
+        await interaction.deferReply({ ephemeral: true });
+        setTimeout(() => {
+            interaction.editReply(
+                '<:warn:799684571880095784> Command not implemented yet'
+            );
+        }, 2000);
     }
 };

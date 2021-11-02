@@ -21,6 +21,9 @@ export default class Client extends DiscordClient {
     }
 
     public async start() {
+        logger.log('Registering events...'.italic.magenta);
+        const events = loadEvents(this);
+        logger.log(`Successfully registered ${events} events!`);
         logger.log('Loading client...'.italic.magenta);
         await super.login(this.token);
         logger.log(`Logged in as ${this.user.tag}!`);
@@ -30,8 +33,5 @@ export default class Client extends DiscordClient {
         logger.log('Registering commands...'.italic.magenta);
         await loadCommands(this);
         logger.log(`Successfully registered ${this.commands.size} commands!`);
-        logger.log('Registering events...'.italic.magenta);
-        const events = loadEvents(this);
-        logger.log(`Successfully registered ${events} events!`);
     }
 }
