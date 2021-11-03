@@ -86,7 +86,8 @@ export default class Client extends DiscordClient {
 
         const _meta = queueInitOptions.metadata;
         delete queueInitOptions['metadata'];
-        queueInitOptions.ytdlOptions ??= this.opts.ytdlOptions;
+        if (!queueInitOptions.ytdlOptions)
+            queueInitOptions.ytdlOptions = this.opts.ytdlOptions;
         const queue = new Queue(this, guild, queueInitOptions);
         queue.metadata = _meta;
         this.queue.set(guild.id, queue);

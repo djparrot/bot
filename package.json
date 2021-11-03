@@ -55,5 +55,8 @@
     "gulp-esbuild": "^0.9.0",
     "prettier": "^2.4.1",
     "typescript": "^4.5.0-dev.20211006"
+  },
+  "engines": {
+    "node": ">=16"
   }
 }
