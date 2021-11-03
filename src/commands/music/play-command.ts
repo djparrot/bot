@@ -1,20 +1,8 @@
-import { createErrorEmbed, scrap } from '../../utils';
+import { createErrorEmbed } from '../../utils';
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { Command } from '../command-handler';
-import { GuildMember, StageChannel, VoiceChannel } from 'discord.js';
+import { GuildMember } from 'discord.js';
 import { SongResolver } from '../../handlers';
-import ytdl from 'discord-ytdl-core';
-import {
-    joinVoiceChannel,
-    createAudioPlayer,
-    NoSubscriberBehavior,
-    createAudioResource,
-    StreamType,
-    VoiceConnectionStatus,
-    entersState,
-    AudioPlayerStatus
-} from '@discordjs/voice';
-import { QueryType } from '../../interfaces';
 
 export const command: Command = {
     builder: new SlashCommandBuilder()
@@ -117,6 +105,12 @@ export const command: Command = {
                 ephemeral: true
             });
         }
+
+        queue.connection.on('error', (error) => {
+            console.log(error);
+        });
+
+        queue.connection.voiceConnection.on('error', console.log);
 
         await interaction.followUp({
             content: `⏱ | Loading your ${

@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import './services/api';
 import { Client } from './extensions';
 import { logger, MongoDB } from './services';
 

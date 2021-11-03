@@ -19,7 +19,7 @@ import {
 import ytdl from 'discord-ytdl-core';
 import { AudioResource, StreamType } from '@discordjs/voice';
 import YouTube from 'youtube-sr';
-import { AudioFilters, buildTimeCode, last, parseMS } from '../utils';
+import { FilterList, buildTimeCode, last, parseMS } from '../utils';
 import { Client } from '../extensions';
 import { generateDependencyReport } from '@discordjs/voice';
 import { opus, FFmpeg } from 'prism-media';
@@ -236,16 +236,12 @@ class Queue<T = unknown> {
 
     getFiltersEnabled() {
         if (this.#watchDestroyed()) return;
-        return AudioFilters.names.filter((x) =>
-            this._activeFilters.includes(x)
-        );
+        return FilterList.names.filter((x) => this._activeFilters.includes(x));
     }
 
     getFiltersDisabled() {
         if (this.#watchDestroyed()) return;
-        return AudioFilters.names.filter(
-            (x) => !this._activeFilters.includes(x)
-        );
+        return FilterList.names.filter((x) => !this._activeFilters.includes(x));
     }
 
     async setFilters(filters?: QueueFilters) {
@@ -270,7 +266,7 @@ class Queue<T = unknown> {
 
         if (this._activeFilters.join('') === _filters.join('')) return;
 
-        const newFilters = AudioFilters.create(_filters).trim();
+        const newFilters = FilterList.create(_filters).trim();
         const streamTime = this.streamTime;
         this._activeFilters = _filters;
 
@@ -468,15 +464,23 @@ class Queue<T = unknown> {
                 return void this.play(this.tracks.shift(), { immediate: true });
 
             stream = ytdl(link, {
-                ...this.options.ytdlOptions,
                 opusEncoded: false,
+                filter: 'audioonly',
                 fmt: 's16le',
                 encoderArgs:
                     options.encoderArgs ?? this._activeFilters.length
-                        ? ['-af', AudioFilters.create(this._activeFilters)]
+                        ? ['-af', FilterList.create(this._activeFilters)]
                         : [],
-                seek: options.seek ? options.seek / 1000 : 0
-            }).on('error', () => {});
+                seek: options.seek ? options.seek / 1000 : undefined,
+                highWaterMark: 1 << 25,
+                requestOptions: {
+                    headers: {
+                        Cookie: 'CONSENT=YES+srp.gws-20211018-0-RC1.fr+FX+843; SID=DQhsYnxL8X7HdVJRfj0f2DFKSqicDRkRO-HCpD-PrLVsjGZ9CqjHwUrrd3lcSAt2vF6q9w.; APISID=vprA6YqG25gcjeVv/AdRPFdnoCbr97sMvf; SAPISID=AODaHwyMwH-jTM9w/ApeiQqcTLa3vg7o1U; __Secure-1PAPISID=AODaHwyMwH-jTM9w/ApeiQqcTLa3vg7o1U; __Secure-3PAPISID=AODaHwyMwH-jTM9w/ApeiQqcTLa3vg7o1U; PREF=tz=Europe.Paris&f6=400&f5=30000; wide=1; SIDCC=AJi4QfFs9y6yhfTUudgwVLEDhlaUraRSGdL4ko_baVBfNZNN9b3_OjbiDWnQcdjHXfDzRXh3wZA',
+                        'x-youtube-identity-token':
+                            'QUFFLUhqbTZkNkxHZGFsenc1MUl2aDB6d0FVM2p2enJlQXw\u003d'
+                    }
+                }
+            }).on('error', console.log);
         } else {
             stream = ytdl
                 .arbitraryStream(
@@ -492,13 +496,13 @@ class Queue<T = unknown> {
                             options.encoderArgs ?? this._activeFilters.length
                                 ? [
                                       '-af',
-                                      AudioFilters.create(this._activeFilters)
+                                      FilterList.create(this._activeFilters)
                                   ]
                                 : [],
                         seek: options.seek ? options.seek / 1000 : 0
                     }
                 )
-                .on('error', () => {});
+                .on('error', console.log);
         }
 
         const resource: AudioResource<Track> = this.connection.createStream(

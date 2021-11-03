@@ -10,7 +10,7 @@ import {
     last
 } from './Utils';
 import scrap, { Scrap } from './Scrap';
-import FilterList, { AudioFilters } from './AudioFilters';
+import FilterList from './AudioFilters';
 import VoiceUtils from './VoiceUtils';
 
 export {
@@ -19,7 +19,6 @@ export {
     createErrorEmbed,
     durationString,
     buildTimeCode,
-    AudioFilters,
     isVoiceEmpty,
     VoiceUtils,
     FilterList,
