@@ -1,12 +1,7 @@
-import {
-    createErrorEmbed,
-    scrap,
-    validateContinuePlaying,
-    validateStartPlaying
-} from '../../utils';
+import { createErrorEmbed, scrap } from '../../utils';
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { Command } from '../command-handler';
-import { GuildMember } from 'discord.js';
+import { GuildMember, StageChannel, VoiceChannel } from 'discord.js';
 import { SongResolver } from '../../handlers';
 import ytdl from 'discord-ytdl-core';
 import {
@@ -19,7 +14,7 @@ import {
     entersState,
     AudioPlayerStatus
 } from '@discordjs/voice';
-import { logger } from '../../services';
+import { QueryType } from '../../interfaces';
 
 export const command: Command = {
     builder: new SlashCommandBuilder()
@@ -47,7 +42,6 @@ export const command: Command = {
         ),
     async run(client, interaction) {
         interaction.member = interaction.member as GuildMember;
-        const queue = client.queue.get(interaction.guildId);
         const settings = await client.db.getGuild(interaction.guildId);
         const type = interaction.options.getString('type');
         let query = interaction.options.getString('query');
@@ -98,107 +92,40 @@ export const command: Command = {
 
         interaction.deferReply();
 
-        /*ytdl('https://www.youtube.com/watch?v=W8yYQ-WyNoI', {
-            requestOptions: client.ytdlOpts
-        });
-        ytdl.getInfo('https://www.youtube.com/watch?v=W8yYQ-WyNoI', {
-            requestOptions: client.ytdlOpts
-        }).then(console.log);*/
-        // related_videos
-
-        const song = await new SongResolver(client, query).searchYoutube();
-        if (song instanceof Error)
-            return interaction.editReply({
-                embeds: [createErrorEmbed(song.message)]
+        const searchResult = await client
+            .search(query, {
+                requestedBy: interaction.user
+            })
+            .catch(() => {});
+        if (!searchResult || !searchResult.tracks.length)
+            return void interaction.followUp({
+                content: 'No results were found!',
+                ephemeral: true
             });
 
-        const player = createAudioPlayer({
-            behaviors: {
-                noSubscriber: NoSubscriberBehavior.Pause
-            }
+        const queue = client.createQueue(interaction.guild, {
+            metadata: interaction.channel
         });
 
-        const connection = joinVoiceChannel({
-            channelId: interaction.member.voice.channelId,
-            guildId: interaction.guildId,
-            adapterCreator: interaction.guild.voiceAdapterCreator,
-            selfDeaf: true
+        try {
+            if (!queue.connection)
+                await queue.connect(interaction.member.voice.channel);
+        } catch {
+            void client.deleteQueue(interaction.guildId);
+            return void interaction.followUp({
+                content: 'Could not join your voice channel!',
+                ephemeral: true
+            });
+        }
+
+        await interaction.followUp({
+            content: `⏱ | Loading your ${
+                searchResult.playlist ? 'playlist' : 'track'
+            }...`
         });
-
-        // const channel = await client.channels.fetch(
-        //     interaction.member.voice.channelId
-        // );
-
-        // if (channel.type === 'GUILD_STAGE_VOICE') {
-        //     await interaction.guild.me.voice
-        //         .setSuppressed(false)
-        //         .catch(console.log);
-        // }
-
-        connection.on(VoiceConnectionStatus.Ready, () => {
-            player.play(
-                createAudioResource(
-                    ytdl(scrap(song.stream), {
-                        fmt: 's16le',
-                        requestOptions: client.ytdlOpts,
-                        opusEncoded: false,
-                        highWaterMark: 1 << 25
-                    }),
-                    {
-                        inlineVolume: true,
-                        inputType: StreamType.Raw
-                    }
-                )
-            );
-        });
-
-        connection.on(VoiceConnectionStatus.Disconnected, async () => {
-            try {
-                await Promise.race([
-                    entersState(
-                        connection,
-                        VoiceConnectionStatus.Signalling,
-                        5_000
-                    ),
-                    entersState(
-                        connection,
-                        VoiceConnectionStatus.Connecting,
-                        5_000
-                    )
-                ]);
-            } catch (error) {
-                connection.destroy();
-            }
-        });
-
-        player.on(AudioPlayerStatus.Playing, () => {
-            interaction.editReply('Now playing: ' + song.title);
-        });
-
-        connection.subscribe(player);
-
-        // if (queue) {
-        //     const validation = validateContinuePlaying(
-        //         client,
-        //         interaction,
-        //         settings
-        //     );
-        //     if (validation instanceof Error)
-        //         return interaction.reply({
-        //             embeds: [createErrorEmbed(validation.message)],
-        //             ephemeral: true
-        //         });
-        // } else {
-        //     const validation = validateStartPlaying(
-        //         client,
-        //         interaction,
-        //         settings
-        //     );
-        //     if (validation instanceof Error)
-        //         return interaction.reply({
-        //             embeds: [createErrorEmbed(validation.message)],
-        //             ephemeral: true
-        //         });
-        // }
+        searchResult.playlist
+            ? queue.addTracks(searchResult.tracks)
+            : queue.addTrack(searchResult.tracks[0]);
+        if (!queue.playing) await queue.play();
     }
 };
