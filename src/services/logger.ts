@@ -61,7 +61,7 @@ export default class Logger {
         const now = `[${d.getFullYear()}/${month}/${date} ${hour}:${minutes}:${sec}]`;
         const log = [
             now.bgGreen.black.bold,
-            info.red.italic,
+            info?.red?.italic ?? '',
             '->'.blue.bold,
             text.join(' ').cyan
         ].join(' ');
