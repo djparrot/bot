@@ -4,15 +4,15 @@ import { Playlist, Queue } from '.';
 import { Client } from '../extensions';
 
 class Track {
-    public client!: Client;
-    public title!: string;
-    public description!: string;
-    public author!: string;
-    public url!: string;
-    public thumbnail!: string;
-    public duration!: string;
-    public views!: number;
-    public requestedBy!: User;
+    public client: Client;
+    public title: string;
+    public description: string;
+    public author: string;
+    public url: string;
+    public thumbnail: string;
+    public duration: string;
+    public views: number;
+    public requestedBy: User;
     public playlist?: Playlist;
     public readonly raw: RawTrackData = {} as RawTrackData;
     public readonly id: Snowflake = SnowflakeUtil.generate();

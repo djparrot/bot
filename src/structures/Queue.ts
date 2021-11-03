@@ -22,6 +22,7 @@ import YouTube from 'youtube-sr';
 import { AudioFilters, buildTimeCode, last, parseMS } from '../utils';
 import { Client } from '../extensions';
 import { generateDependencyReport } from '@discordjs/voice';
+import { opus, FFmpeg } from 'prism-media';
 
 class Queue<T = unknown> {
     public readonly guild: Guild;
@@ -451,7 +452,7 @@ class Queue<T = unknown> {
             this.previousTracks.push(track);
         }
 
-        let stream;
+        let stream: opus.Encoder | FFmpeg;
         if (['youtube', 'spotify'].includes(track.raw.source)) {
             if (track.raw.source === 'spotify' && !track.raw.engine) {
                 track.raw.engine = await YouTube.search(
