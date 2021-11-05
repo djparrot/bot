@@ -14,7 +14,7 @@ export const listener: EventListener<'ready'> = {
         setInterval(() => {
             dblapi.postStats({
                 serverCount: client.guilds.cache.size,
-                shardCount: client.shard.count
+                shardCount: client.shard?.count ?? 1
             });
         }, 1800000);
     }

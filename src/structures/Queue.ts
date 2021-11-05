@@ -20,7 +20,7 @@ import {
 } from '../interfaces';
 import ytdl from 'discord-ytdl-core';
 import { AudioResource, StreamType } from '@discordjs/voice';
-import YouTube from 'youtube-sr';
+import YouTube, { Video } from 'youtube-sr';
 import {
     FilterList,
     buildTimeCode,
@@ -470,6 +470,8 @@ class Queue {
 
         let stream: opus.Encoder | FFmpeg;
         if (['youtube', 'spotify', 'deezer'].includes(track.raw.source)) {
+            let isLive: boolean = null;
+
             if (
                 (track.raw.source === 'spotify' ||
                     track.raw.source === 'deezer') &&
@@ -481,6 +483,7 @@ class Queue {
                 )
                     .then((x) => {
                         track.duration = buildTimeCode(parseMS(x[0].duration));
+                        isLive = x[0].duration === 0;
                         return x[0].url;
                     })
                     .catch(() => null);
@@ -492,9 +495,17 @@ class Queue {
             if (!link)
                 return void this.play(this.tracks.shift(), { immediate: true });
 
+            if (typeof isLive !== 'boolean') {
+                const x = await YouTube.getVideo(link).catch(() => {});
+                if (x instanceof Video) {
+                    track.duration = buildTimeCode(parseMS(x.duration));
+                    isLive = x.duration === 0;
+                }
+            }
+
             stream = ytdl(link, {
                 opusEncoded: false,
-                filter: 'audioonly',
+                filter: isLive ? 'audioandvideo' : 'audioonly',
                 fmt: 's16le',
                 encoderArgs:
                     options.encoderArgs ?? this._activeFilters.length
