@@ -30,7 +30,7 @@ export const loadCommands = async (client: Client) => {
             }
         });
 
-    await client.restClient.put(Routes.applicationCommands(client.user.id), {
+    /*await client.restClient.put(Routes.applicationCommands(client.user.id), {
         body: client.commands.map((cmd) => {
             const raw = cmd.builder.toJSON();
             if (raw.name === 'volume') {
@@ -44,13 +44,7 @@ export const loadCommands = async (client: Client) => {
             }
             return raw;
         })
-    });
-    await client.restClient.put(
-        Routes.applicationGuildCommands(client.user.id, '745955508640415764'),
-        {
-            body: []
-        }
-    );
+    });*/
 };
 
 export interface Command {
