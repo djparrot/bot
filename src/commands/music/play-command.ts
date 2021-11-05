@@ -34,12 +34,14 @@ export const command: Command = {
         const type = interaction.options.getString('type');
         let query = interaction.options.getString('query');
 
+        await interaction.deferReply();
+
         if (type && !query.includes('https://') && type !== 'song') {
             switch (type) {
                 case 'artist':
                     const artist = await searchSpotifyArtist(client, query);
                     if (artist instanceof Error) {
-                        return interaction.reply({
+                        return interaction.followUp({
                             content:
                                 '<:deny:905916059993923595> No results found!',
                             ephemeral: true
@@ -50,7 +52,7 @@ export const command: Command = {
                 case 'playlist':
                     const playlist = await searchSpotifyPlaylist(client, query);
                     if (playlist instanceof Error) {
-                        return interaction.reply({
+                        return interaction.followUp({
                             content:
                                 '<:deny:905916059993923595> No results found!',
                             ephemeral: true
@@ -61,7 +63,7 @@ export const command: Command = {
                 case 'album':
                     const album = await searchSpotifyAlbum(client, query);
                     if (album instanceof Error) {
-                        return interaction.reply({
+                        return interaction.followUp({
                             content:
                                 '<:deny:905916059993923595> No results found!',
                             ephemeral: true
@@ -71,8 +73,6 @@ export const command: Command = {
                     break;
             }
         }
-
-        await interaction.deferReply();
 
         const searchResult = await client
             .search(query, {

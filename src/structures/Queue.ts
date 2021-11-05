@@ -494,7 +494,7 @@ class Queue {
 
             stream = ytdl(link, {
                 opusEncoded: false,
-                filter: track.durationMS ? 'audioandvideo' : 'audioonly',
+                filter: 'audioonly',
                 fmt: 's16le',
                 encoderArgs:
                     options.encoderArgs ?? this._activeFilters.length
