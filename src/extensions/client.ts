@@ -1,6 +1,7 @@
 import {
     Client as DiscordClient,
     Collection,
+    CommandInteraction,
     GuildResolvable,
     Intents,
     User
@@ -19,32 +20,25 @@ import {
     Client as SoundCloud,
     SearchResult as SoundCloudSearchResult
 } from 'soundcloud-scraper';
+import Deezer from 'deezer-web-api';
 import YouTube from 'youtube-sr';
 import Spotify from 'spotify-url-info';
 import { ExtractorModel } from '../services/extractors';
+import SpotifyWebApi from 'spotify-web-api-node';
+import axios from 'axios';
+import api from './../services/api';
 
 const soundcloud = new SoundCloud();
+const deezerApi = new Deezer();
 
 export default class Client extends DiscordClient {
     public static instance: Client;
     public readonly extractors = new Collection<string, ExtractorModel>();
     public commands = new Collection<string, Command>();
     public queue = new Collection<string, Queue>();
+    public spotifyApi: SpotifyWebApi;
     public voiceUtils: VoiceUtils;
     public restClient: REST;
-    public opts = {
-        autoRegisterExtractor: true,
-        ytdlOptions: {
-            // requestOptions: {
-            //     headers: {
-            //         cookie: 'CONSENT=YES+srp.gws-20211018-0-RC1.fr+FX+843; SID=DQhsYnxL8X7HdVJRfj0f2DFKSqicDRkRO-HCpD-PrLVsjGZ9CqjHwUrrd3lcSAt2vF6q9w.; APISID=vprA6YqG25gcjeVv/AdRPFdnoCbr97sMvf; SAPISID=AODaHwyMwH-jTM9w/ApeiQqcTLa3vg7o1U; __Secure-1PAPISID=AODaHwyMwH-jTM9w/ApeiQqcTLa3vg7o1U; __Secure-3PAPISID=AODaHwyMwH-jTM9w/ApeiQqcTLa3vg7o1U; PREF=tz=Europe.Paris&f6=400&f5=30000; wide=1; SIDCC=AJi4QfFs9y6yhfTUudgwVLEDhlaUraRSGdL4ko_baVBfNZNN9b3_OjbiDWnQcdjHXfDzRXh3wZA',
-            //         'x-youtube-identity-token':
-            //             'QUFFLUhqbTZkNkxHZGFsenc1MUl2aDB6d0FVM2p2enJlQXw\u003d'
-            //     }
-            // }
-        },
-        connectionTimeout: 20000
-    };
 
     constructor(token: string, public db: Database) {
         super({
@@ -54,6 +48,10 @@ export default class Client extends DiscordClient {
             intents: [Intents.FLAGS.GUILD_VOICE_STATES, Intents.FLAGS.GUILDS]
         });
         this.restClient = new REST({ version: '9' }).setToken(token);
+        this.spotifyApi = new SpotifyWebApi({
+            clientId: process.env['SPOTIFY_CLIENT_ID'],
+            clientSecret: process.env['SPOTIFY_CLIENT_SECRET']
+        });
         this.voiceUtils = new VoiceUtils();
         Client.instance = this;
         this.token = token;
@@ -63,47 +61,80 @@ export default class Client extends DiscordClient {
         logger.log('Registering events...'.italic.magenta);
         const events = loadEvents(this);
         logger.log(`Successfully registered ${events} events!`);
+
         logger.log('Loading client...'.italic.magenta);
         await super.login(this.token);
         logger.log(`Logged in as ${this.user.tag}!`);
+
         logger.log('Connecting to the database...'.italic.magenta);
         await this.db.connect();
         logger.log('Database connected!');
+
         logger.log('Registering commands...'.italic.magenta);
-        await loadCommands(this, false);
+        await loadCommands(this);
         logger.log(`Successfully registered ${this.commands.size} commands!`);
+
+        logger.log('Loading spotify api...'.italic.magenta);
+        const spt = await this._getSpotifyToken();
+        this.spotifyApi.setAccessToken(spt.accessToken);
+        setInterval(async () => {
+            const token = await this._getSpotifyToken();
+            this.spotifyApi.setAccessToken(token.accessToken);
+        }, spt.expiresIn * 1000);
+        logger.log('Spotify api loaded!');
+
+        logger.log('Starting api...'.italic.magenta);
+        const port = await api(this);
+        logger.log('Api is listening to port:', port);
     }
 
-    createQueue<T = unknown>(
+    private async _getSpotifyToken() {
+        const res = await axios({
+            url: 'https://accounts.spotify.com/api/token?grant_type=client_credentials',
+            method: 'POST',
+            headers: {
+                Authorization: `Basic ${Buffer.from(
+                    `${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`
+                ).toString('base64')}`,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        });
+        const data = {
+            tokenType: res.data.token_type,
+            accessToken: res.data.access_token,
+            expiresIn: res.data.expires_in
+        };
+        return data;
+    }
+
+    createQueue(
         guild: GuildResolvable,
-        queueInitOptions: PlayerOptions & { metadata?: T } = {}
-    ): Queue<T> {
+        queueInitOptions: PlayerOptions & { metadata?: CommandInteraction } = {}
+    ): Queue {
         guild = this.guilds.resolve(guild);
         if (!guild) throw new Error('Unknown Guild');
-        if (this.queue.has(guild.id))
-            return this.queue.get(guild.id) as Queue<T>;
+        if (this.queue.has(guild.id)) return this.queue.get(guild.id) as Queue;
 
         const _meta = queueInitOptions.metadata;
         delete queueInitOptions['metadata'];
-        if (!queueInitOptions.ytdlOptions)
-            queueInitOptions.ytdlOptions = this.opts.ytdlOptions;
+        if (!queueInitOptions.ytdlOptions) queueInitOptions.ytdlOptions = {};
         const queue = new Queue(this, guild, queueInitOptions);
         queue.metadata = _meta;
         this.queue.set(guild.id, queue);
 
-        return queue as Queue<T>;
+        return queue as Queue;
     }
 
-    getQueue<T = unknown>(guild: GuildResolvable) {
+    getQueue(guild: GuildResolvable) {
         guild = this.guilds.resolve(guild);
         if (!guild) throw new Error('Unknown Guild');
-        return this.queue.get(guild.id) as Queue<T>;
+        return this.queue.get(guild.id) as Queue;
     }
 
-    deleteQueue<T = unknown>(guild: GuildResolvable) {
+    deleteQueue(guild: GuildResolvable) {
         guild = this.guilds.resolve(guild);
         if (!guild) throw new Error('Unknown Guild');
-        const prev = this.getQueue<T>(guild);
+        const prev = this.getQueue(guild);
 
         try {
             prev.destroy();
@@ -150,6 +181,7 @@ export default class Client extends DiscordClient {
             options.searchEngine === QueryType.AUTO
                 ? QueryResolver.resolve(query)
                 : options.searchEngine;
+
         switch (qt) {
             case QueryType.YOUTUBE_VIDEO: {
                 const info = await getInfo(query).catch(() => {});
@@ -184,7 +216,7 @@ export default class Client extends DiscordClient {
                 if (!videos) return { playlist: null, tracks: [] };
 
                 const tracks = videos.map((m) => {
-                    (m as any).source = 'youtube'; // eslint-disable-line @typescript-eslint/no-explicit-any
+                    (m as any).source = 'youtube';
                     return new Track(this, {
                         title: m.title,
                         description: m.description,
@@ -264,6 +296,7 @@ export default class Client extends DiscordClient {
                 return { playlist: null, tracks: [spotifyTrack] };
             }
             case QueryType.SPOTIFY_PLAYLIST:
+            case QueryType.SPOTIFY_ARTIST:
             case QueryType.SPOTIFY_ALBUM: {
                 const spotifyPlaylist = await Spotify.getData(query).catch(
                     () => {}
@@ -279,7 +312,15 @@ export default class Client extends DiscordClient {
                     type: spotifyPlaylist.type,
                     source: 'spotify',
                     author:
-                        spotifyPlaylist.type !== 'playlist'
+                        spotifyPlaylist.type === 'artist'
+                            ? {
+                                  name:
+                                      spotifyPlaylist.name ?? 'Unknown Artist',
+                                  url:
+                                      spotifyPlaylist.external_urls?.spotify ??
+                                      null
+                              }
+                            : spotifyPlaylist.type !== 'playlist'
                             ? {
                                   name:
                                       spotifyPlaylist.artists[0]?.name ??
@@ -304,27 +345,29 @@ export default class Client extends DiscordClient {
                 });
 
                 if (spotifyPlaylist.type !== 'playlist') {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    playlist.tracks = spotifyPlaylist.tracks.items.map(
-                        (m: any) => {
-                            const data = new Track(this, {
-                                title: m.name ?? '',
-                                description: m.description ?? '',
-                                author: m.artists[0]?.name ?? 'Unknown Artist',
-                                url: m.external_urls?.spotify ?? query,
-                                thumbnail:
-                                    spotifyPlaylist.images[0]?.url ??
-                                    'https://www.scdn.co/i/_global/twitter_card-default.jpg',
-                                duration: buildTimeCode(parseMS(m.duration_ms)),
-                                views: 0,
-                                requestedBy: options.requestedBy as User,
-                                playlist,
-                                source: 'spotify'
-                            });
+                    playlist.tracks = (
+                        spotifyPlaylist.type === 'artist'
+                            ? spotifyPlaylist.tracks
+                            : spotifyPlaylist.tracks.items
+                    ).map((m: any) => {
+                        const data = new Track(this, {
+                            title: m.name ?? '',
+                            description: m.description ?? '',
+                            author: m.artists[0]?.name ?? 'Unknown Artist',
+                            url: m.external_urls?.spotify ?? query,
+                            thumbnail:
+                                m.album?.images[0]?.url ??
+                                spotifyPlaylist.images[0]?.url ??
+                                'https://www.scdn.co/i/_global/twitter_card-default.jpg',
+                            duration: buildTimeCode(parseMS(m.duration_ms)),
+                            views: 0,
+                            requestedBy: options.requestedBy as User,
+                            playlist,
+                            source: 'spotify'
+                        });
 
-                            return data;
-                        }
-                    ) as Track[];
+                        return data;
+                    }) as Track[];
                 } else {
                     playlist.tracks = spotifyPlaylist.tracks.items.map(
                         (m: any) => {
@@ -350,6 +393,125 @@ export default class Client extends DiscordClient {
                             return data;
                         }
                     ) as Track[];
+                }
+
+                return { playlist: playlist, tracks: playlist.tracks };
+            }
+            case QueryType.DEEZER_SONG: {
+                const deezerData = await deezerApi.musics
+                    .getTrack(query.split('/track/')[1].split('?')[0])
+                    .catch(() => {});
+                if (!deezerData) return { playlist: null, tracks: [] };
+                const deezerTrack = new Track(this, {
+                    title: deezerData.title,
+                    description: '',
+                    author: deezerData.artist?.name ?? 'Unknown Artist',
+                    url: deezerData.link ?? query,
+                    thumbnail:
+                        deezerData.album?.cover ??
+                        'https://cdn.discordapp.com/emojis/808421337735233577.png',
+                    duration: buildTimeCode(
+                        parseMS(deezerData.duration * 1000)
+                    ),
+                    views: 0,
+                    requestedBy: options.requestedBy,
+                    source: 'deezer'
+                });
+
+                return { playlist: null, tracks: [deezerTrack] };
+            }
+            case QueryType.DEEZER_PLAYLIST:
+            case QueryType.DEEZER_ARTIST:
+            case QueryType.DEEZER_ALBUM: {
+                const type = qt.toString().split('_')[1];
+                let method = 'getPlaylist';
+                if (type === 'artist') method = 'getArtist';
+                if (type === 'album') method = 'getAlbum';
+
+                const deezerPlaylist = await deezerApi[
+                    type === 'artist' ? 'users' : 'musics'
+                ]
+                    [method](query.split(`/${type}/`)[1].split('?')[0])
+                    .catch(() => {});
+                if (!deezerPlaylist) return { playlist: null, tracks: [] };
+
+                const playlist = new Playlist(this, {
+                    title: deezerPlaylist.title ?? deezerPlaylist.name,
+                    description: deezerPlaylist.description ?? '',
+                    thumbnail: deezerPlaylist.picture ?? deezerPlaylist.cover,
+                    type: deezerPlaylist.type,
+                    source: 'deezer',
+                    author:
+                        deezerPlaylist.type === 'artist'
+                            ? {
+                                  name: deezerPlaylist.name ?? 'Unknown Artist',
+                                  url: deezerPlaylist.link ?? null
+                              }
+                            : deezerPlaylist.type === 'playlist'
+                            ? {
+                                  name:
+                                      deezerPlaylist.creator?.name ??
+                                      'Unknown Artist',
+                                  url: deezerPlaylist.creator?.tracklist ?? null
+                              }
+                            : {
+                                  name:
+                                      deezerPlaylist.artist?.name ??
+                                      'Unknown Artist',
+                                  url: deezerPlaylist.artist?.tracklist ?? null
+                              },
+                    tracks: [],
+                    id: deezerPlaylist.id,
+                    url: deezerPlaylist.link ?? query,
+                    rawPlaylist: deezerPlaylist
+                });
+
+                if (deezerPlaylist.type !== 'artist') {
+                    const cover = deezerPlaylist.cover;
+                    playlist.tracks = deezerPlaylist.tracks.data.map(
+                        (m: any) => {
+                            const data = new Track(this, {
+                                title: m.title ?? '',
+                                description: '',
+                                author: m.artist?.name ?? 'Unknown Artist',
+                                url: m.link ?? query,
+                                thumbnail:
+                                    m.album?.cover ??
+                                    cover ??
+                                    'https://cdn.discordapp.com/emojis/808421337735233577.png',
+                                duration: buildTimeCode(
+                                    parseMS(m.duration * 1000)
+                                ),
+                                views: 0,
+                                requestedBy: options.requestedBy as User,
+                                playlist,
+                                source: 'deezer'
+                            });
+
+                            return data;
+                        }
+                    ) as Track[];
+                } else {
+                    const tracks = await deezerApi.users.getArtistTopTracks(
+                        query.split('/artist/')[1].split('?')[0]
+                    );
+                    playlist.tracks = tracks.data.map((m) => {
+                        const data = new Track(this, {
+                            title: m.title ?? '',
+                            description: '',
+                            author: m.artist?.name ?? 'Unknown Artist',
+                            url: m.link ?? query,
+                            thumbnail:
+                                m.album.cover ??
+                                'https://cdn.discordapp.com/emojis/808421337735233577.png',
+                            duration: buildTimeCode(parseMS(m.duration * 1000)),
+                            views: 0,
+                            requestedBy: options.requestedBy as User,
+                            playlist,
+                            source: 'deezer'
+                        });
+                        return data;
+                    }) as Track[];
                 }
 
                 return { playlist: playlist, tracks: playlist.tracks };

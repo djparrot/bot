@@ -68,23 +68,17 @@ class Track {
         return this.raw.source ?? 'arbitrary';
     }
 
-    toString(): string {
+    toString() {
         return `${this.title} by ${this.author}`;
     }
 
-    toJSON(hidePlaylist?: boolean) {
+    toJSON() {
         return {
-            id: this.id,
             title: this.title,
-            description: this.description,
-            author: this.author,
             url: this.url,
             thumbnail: this.thumbnail,
-            duration: this.duration,
-            durationMS: this.durationMS,
-            views: this.views,
-            requestedBy: this.requestedBy.id,
-            playlist: hidePlaylist ? null : this.playlist?.toJSON() ?? null
+            duration: this.durationMS,
+            artist: this.author
         } as TrackJSON;
     }
 }

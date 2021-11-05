@@ -45,7 +45,12 @@ export interface QueueFilters {
     earrape?: boolean;
 }
 
-export type TrackSource = 'soundcloud' | 'youtube' | 'spotify' | 'arbitrary';
+export type TrackSource =
+    | 'soundcloud'
+    | 'youtube'
+    | 'spotify'
+    | 'deezer'
+    | 'arbitrary';
 
 export interface RawTrackData {
     title: string;
@@ -93,7 +98,7 @@ export interface ExtractorModelData {
         title: string;
         description: string;
         thumbnail: string;
-        type: 'album' | 'playlist';
+        type: 'album' | 'playlist' | 'artist';
         source: TrackSource;
         author: {
             name: string;
@@ -126,7 +131,12 @@ export enum QueryType {
     SOUNDCLOUD = 'soundcloud',
     SPOTIFY_SONG = 'spotify_song',
     SPOTIFY_ALBUM = 'spotify_album',
+    SPOTIFY_ARTIST = 'spotify_artist',
     SPOTIFY_PLAYLIST = 'spotify_playlist',
+    DEEZER_SONG = 'deezer_song',
+    DEEZER_ALBUM = 'deezer_album',
+    DEEZER_ARTIST = 'deezer_artist',
+    DEEZER_PLAYLIST = 'deezer_playlist',
     YOUTUBE_SEARCH = 'youtube_search',
     YOUTUBE_VIDEO = 'youtube_video',
     SOUNDCLOUD_SEARCH = 'soundcloud_search'
@@ -171,7 +181,7 @@ export interface PlaylistInitData {
     title: string;
     description: string;
     thumbnail: string;
-    type: 'album' | 'playlist';
+    type: 'album' | 'playlist' | 'artist';
     source: TrackSource;
     author: {
         name: string;
@@ -183,17 +193,11 @@ export interface PlaylistInitData {
 }
 
 export interface TrackJSON {
-    id: Snowflake;
     title: string;
-    description: string;
-    author: string;
     url: string;
     thumbnail: string;
-    duration: string;
-    durationMS: number;
-    views: number;
-    requestedBy: Snowflake;
-    playlist?: PlaylistJSON;
+    duration: number;
+    artist: string;
 }
 
 export interface PlaylistJSON {
@@ -202,7 +206,7 @@ export interface PlaylistJSON {
     title: string;
     description: string;
     thumbnail: string;
-    type: 'album' | 'playlist';
+    type: 'album' | 'playlist' | 'artist';
     source: TrackSource;
     author: {
         name: string;

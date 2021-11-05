@@ -3,9 +3,14 @@ import {
     validateStartPlaying,
     createErrorEmbed,
     durationString,
+    formatDuration,
     buildTimeCode,
     isVoiceEmpty,
+    createEmbed,
+    formatCase,
+    checkPerms,
     parseMS,
+    chunk,
     wait,
     last
 } from './Utils';
@@ -18,13 +23,18 @@ export {
     validateStartPlaying,
     createErrorEmbed,
     durationString,
+    formatDuration,
     buildTimeCode,
     isVoiceEmpty,
+    createEmbed,
+    formatCase,
+    checkPerms,
     VoiceUtils,
     FilterList,
     parseMS,
     Scrap,
     scrap,
+    chunk,
     wait,
     last
 };

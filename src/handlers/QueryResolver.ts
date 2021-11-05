@@ -10,6 +10,8 @@ const spotifyPlaylistRegex =
     /https?:\/\/(?:embed\.|open\.)(?:spotify\.com\/)(?:playlist\/|\?uri=spotify:playlist:)((\w|-){22})/;
 const spotifyAlbumRegex =
     /https?:\/\/(?:embed\.|open\.)(?:spotify\.com\/)(?:album\/|\?uri=spotify:album:)((\w|-){22})/;
+const spotifyArtistRegex =
+    /https?:\/\/(?:embed\.|open\.)(?:spotify\.com\/)(?:artist\/|\?uri=spotify:artist:)((\w|-){22})/;
 
 class QueryResolver {
     static resolve(query: string): QueryType {
@@ -26,6 +28,13 @@ class QueryResolver {
         if (spotifySongRegex.test(query)) return QueryType.SPOTIFY_SONG;
         if (spotifyPlaylistRegex.test(query)) return QueryType.SPOTIFY_PLAYLIST;
         if (spotifyAlbumRegex.test(query)) return QueryType.SPOTIFY_ALBUM;
+        if (spotifyArtistRegex.test(query)) return QueryType.SPOTIFY_ARTIST;
+        if (query.includes('https://') && query.includes('deezer.com')) {
+            if (query.includes('track')) return QueryType.DEEZER_SONG;
+            if (query.includes('playlist')) return QueryType.DEEZER_PLAYLIST;
+            if (query.includes('artist')) return QueryType.DEEZER_ARTIST;
+            if (query.includes('album')) return QueryType.DEEZER_ALBUM;
+        }
 
         return QueryType.YOUTUBE_SEARCH;
     }

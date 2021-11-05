@@ -66,7 +66,7 @@ const FilterList = {
     },
 
     toString() {
-        return this.names.map((m) => (this as any)[m]).join(','); // eslint-disable-line @typescript-eslint/no-explicit-any
+        return this.names.map((m) => (this as any)[m]).join(',');
     },
 
     create(filter?: FiltersName[]): string {

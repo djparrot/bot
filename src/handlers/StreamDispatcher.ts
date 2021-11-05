@@ -1,6 +1,5 @@
 import {
     AudioPlayer,
-    AudioPlayerError,
     AudioPlayerStatus,
     AudioResource,
     createAudioPlayer,
@@ -18,7 +17,7 @@ import { Track } from '../structures';
 import { wait } from '../utils';
 
 export interface VoiceEvents {
-    error: (error: AudioPlayerError) => any;
+    error: (error: Error) => any;
     debug: (message: string) => any;
     start: (resource: AudioResource<Track>) => any;
     finish: (resource: AudioResource<Track>) => any;
@@ -111,6 +110,11 @@ class StreamDispatcher extends EventEmitter<VoiceEvents> {
 
         this.audioPlayer.on('debug', (m) => void this.emit('debug', m));
         this.audioPlayer.on('error', (error) => void this.emit('error', error));
+        this.voiceConnection.on('debug', (m) => void this.emit('debug', m));
+        this.voiceConnection.on(
+            'error',
+            (error) => void this.emit('error', error)
+        );
         this.voiceConnection.subscribe(this.audioPlayer);
     }
 
@@ -164,14 +168,14 @@ class StreamDispatcher extends EventEmitter<VoiceEvents> {
                     this.connectionTimeout
                 );
             } catch (err) {
-                return void this.emit('error', err as AudioPlayerError);
+                return void this.emit('error', err);
             }
         }
 
         try {
             this.audioPlayer.play(resource);
         } catch (e) {
-            this.emit('error', e as AudioPlayerError);
+            this.emit('error', e);
         }
 
         return this;

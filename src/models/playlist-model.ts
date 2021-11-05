@@ -11,11 +11,8 @@ interface Song {
     title: string;
     url: string;
     thumbnail: string;
-    live: boolean;
     duration: number;
     artist: string;
-    type: 'youtube' | 'spotify' | 'deezer' | 'soundcloud';
-    stream: string;
 }
 
 export interface PlaylistDB {
@@ -24,14 +21,16 @@ export interface PlaylistDB {
     description: string;
     songs: Song[];
     liked: string[];
+    listen: number;
 }
 
 export const playlistSchema = new Schema({
     _id: { type: String },
-    owner: { type: Object },
-    description: { type: String },
-    songs: { type: Array },
-    liked: { type: Array }
+    owner: { type: Object, required: true },
+    description: { type: String, default: 'No description' },
+    songs: { type: Array, required: true },
+    liked: { type: Array, default: [] },
+    listen: { type: Number, default: 0 }
 });
 
 export const playlistModel = model<PlaylistDB>('playlists', playlistSchema);

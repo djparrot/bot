@@ -1,13 +1,14 @@
-import { createErrorEmbed } from '../../utils';
+import { createEmbed, formatCase } from '../../utils';
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { Command } from '../command-handler';
 import { GuildMember } from 'discord.js';
-import { SongResolver } from '../../handlers';
+import { Client } from '../../extensions';
+import { logger } from '../../services';
 
 export const command: Command = {
     builder: new SlashCommandBuilder()
         .setName('play')
-        .setDescription('Play music ')
+        .setDescription('Play music')
         .addStringOption((builder) =>
             builder
                 .setName('query')
@@ -28,48 +29,41 @@ export const command: Command = {
                     ['Artist', 'artist']
                 ])
         ),
+    isDjCommand: true,
     async run(client, interaction) {
-        interaction.member = interaction.member as GuildMember;
-        const settings = await client.db.getGuild(interaction.guildId);
         const type = interaction.options.getString('type');
         let query = interaction.options.getString('query');
 
         if (type && !query.includes('https://') && type !== 'song') {
             switch (type) {
                 case 'artist':
-                    const artist = await new SongResolver(
-                        client,
-                        query
-                    ).searchSpotifyArtist();
+                    const artist = await searchSpotifyArtist(client, query);
                     if (artist instanceof Error) {
                         return interaction.reply({
-                            embeds: [createErrorEmbed(artist.message)],
+                            content:
+                                '<:deny:905916059993923595> No results found!',
                             ephemeral: true
                         });
                     }
                     query = artist;
                     break;
                 case 'playlist':
-                    const playlist = await new SongResolver(
-                        client,
-                        query
-                    ).searchSpotifyPlaylist();
+                    const playlist = await searchSpotifyPlaylist(client, query);
                     if (playlist instanceof Error) {
                         return interaction.reply({
-                            embeds: [createErrorEmbed(playlist.message)],
+                            content:
+                                '<:deny:905916059993923595> No results found!',
                             ephemeral: true
                         });
                     }
                     query = playlist;
                     break;
                 case 'album':
-                    const album = await new SongResolver(
-                        client,
-                        query
-                    ).searchSpotifyAlbum();
+                    const album = await searchSpotifyAlbum(client, query);
                     if (album instanceof Error) {
                         return interaction.reply({
-                            embeds: [createErrorEmbed(album.message)],
+                            content:
+                                '<:deny:905916059993923595> No results found!',
                             ephemeral: true
                         });
                     }
@@ -78,7 +72,7 @@ export const command: Command = {
             }
         }
 
-        interaction.deferReply();
+        await interaction.deferReply();
 
         const searchResult = await client
             .search(query, {
@@ -87,35 +81,67 @@ export const command: Command = {
             .catch(() => {});
         if (!searchResult || !searchResult.tracks.length)
             return void interaction.followUp({
-                content: 'No results were found!',
+                content: '<:deny:905916059993923595> No results found!',
                 ephemeral: true
             });
 
         const queue = client.createQueue(interaction.guild, {
-            metadata: interaction.channel
+            metadata: interaction
         });
 
         try {
             if (!queue.connection)
-                await queue.connect(interaction.member.voice.channel);
+                await queue.connect(
+                    (interaction.member as GuildMember).voice.channel
+                );
         } catch {
             void client.deleteQueue(interaction.guildId);
             return void interaction.followUp({
-                content: 'Could not join your voice channel!',
+                content:
+                    '<:deny:905916059993923595> Could not join your voice channel!',
                 ephemeral: true
             });
         }
 
-        queue.connection.on('error', (error) => {
-            console.log(error);
-        });
-
-        queue.connection.voiceConnection.on('error', console.log);
+        if (
+            !queue.connection.listeners('error').length ||
+            queue.connection.listeners('error').length === 0
+        )
+            queue.connection.on('error', (error) => {
+                logger.log(error);
+                queue.metadata.followUp({
+                    ephemeral: true,
+                    content:
+                        '<:deny:905916059993923595> An error occurred while playing this song, you may need to skip this song.'
+                });
+            });
 
         await interaction.followUp({
-            content: `⏱ | Loading your ${
-                searchResult.playlist ? 'playlist' : 'track'
-            }...`
+            embeds: [
+                createEmbed()
+                    .setAuthor(
+                        searchResult.playlist
+                            ? `${formatCase(
+                                  searchResult.playlist.type
+                              )} added to the queue`
+                            : 'Song added to the queue'
+                    )
+                    .setTitle(
+                        searchResult.playlist
+                            ? searchResult.playlist.title
+                            : searchResult.tracks[0].title
+                    )
+                    .setThumbnail(
+                        searchResult.playlist
+                            ? searchResult.playlist.thumbnail
+                            : searchResult.tracks[0].thumbnail
+                    )
+                    .setURL(
+                        searchResult.playlist
+                            ? searchResult.playlist.url
+                            : searchResult.tracks[0].url
+                    )
+            ]
         });
         searchResult.playlist
             ? queue.addTracks(searchResult.tracks)
@@ -123,3 +149,63 @@ export const command: Command = {
         if (!queue.playing) await queue.play();
     }
 };
+
+const searchSpotifyArtist = async (client: Client, query: string) => {
+    let res: Response<SpotifyApi.SearchResponse>;
+    try {
+        res = await client.spotifyApi.searchArtists(query);
+    } catch (err) {
+        logger.log(err);
+        return new Error(
+            "I couldn't find anything on <:spotify:801475401309880370> Spotify."
+        );
+    }
+    if (!res?.body?.artists?.items?.length) {
+        return new Error(
+            "I couldn't find anything on <:spotify:801475401309880370> Spotify."
+        );
+    }
+    return res.body.artists.items[0].external_urls.spotify;
+};
+
+const searchSpotifyPlaylist = async (client: Client, query: string) => {
+    let res: Response<SpotifyApi.SearchResponse>;
+    try {
+        res = await client.spotifyApi.searchPlaylists(query);
+    } catch (err) {
+        logger.log(err);
+        return new Error(
+            "I couldn't find anything on <:spotify:801475401309880370> Spotify."
+        );
+    }
+    if (!res?.body?.playlists?.items?.length) {
+        return new Error(
+            "I couldn't find anything on <:spotify:801475401309880370> Spotify."
+        );
+    }
+    return res.body.playlists.items[0].external_urls.spotify;
+};
+
+const searchSpotifyAlbum = async (client: Client, query: string) => {
+    let res: Response<SpotifyApi.SearchResponse>;
+    try {
+        res = await client.spotifyApi.searchAlbums(query);
+    } catch (err) {
+        logger.log(err);
+        return new Error(
+            "I couldn't find anything on <:spotify:801475401309880370> Spotify."
+        );
+    }
+    if (!res?.body?.albums?.items?.length) {
+        return new Error(
+            "I couldn't find anything on <:spotify:801475401309880370> Spotify."
+        );
+    }
+    return res.body.albums.items[0].external_urls.spotify;
+};
+
+interface Response<T> {
+    body: T;
+    headers: Record<string, string>;
+    statusCode: number;
+}

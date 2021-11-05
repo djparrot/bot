@@ -1,13 +1,12 @@
 import { EventListener } from '../event-handler';
-import { Api } from '@top-gg/sdk';
-import { ActivityTypes } from 'discord.js/typings/enums';
+// import { Api } from '@top-gg/sdk';
 
 export const listener: EventListener<'ready'> = {
     event: 'ready',
     async run(client) {
         client.user.setActivity({
             name: 'music',
-            type: ActivityTypes.LISTENING,
+            type: 'LISTENING',
             url: 'https://djparrot.xyz'
         });
 

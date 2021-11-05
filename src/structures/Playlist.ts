@@ -13,7 +13,7 @@ class Playlist {
     public title: string;
     public description: string;
     public thumbnail: string;
-    public type: 'album' | 'playlist';
+    public type: 'album' | 'playlist' | 'artist';
     public source: TrackSource;
     public author: {
         name: string;
@@ -62,7 +62,7 @@ class Playlist {
             tracks: [] as TrackJSON[]
         };
 
-        if (withTracks) payload.tracks = this.tracks.map((m) => m.toJSON(true));
+        if (withTracks) payload.tracks = this.tracks.map((m) => m.toJSON());
 
         return payload as PlaylistJSON;
     }

@@ -31,15 +31,8 @@ export default class Logger {
     public log(...messages: any[]) {
         const text = [];
         for (const m of messages) {
-            if (typeof m === 'object') {
-                let t: string;
-                try {
-                    t = JSON.stringify(m, null, 2);
-                } catch (ignored) {}
-                if (!t) {
-                    t = m.toString();
-                }
-                text.push(t);
+            if (typeof m !== 'string') {
+                text.push(m.toString());
             } else {
                 text.push(m);
             }

@@ -5,7 +5,9 @@ import {
     VoiceChannel,
     Snowflake,
     SnowflakeUtil,
-    GuildChannelResolvable
+    GuildChannelResolvable,
+    CommandInteraction,
+    TextChannel
 } from 'discord.js';
 import { StreamDispatcher } from '../handlers';
 import { Track } from '.';
@@ -19,12 +21,18 @@ import {
 import ytdl from 'discord-ytdl-core';
 import { AudioResource, StreamType } from '@discordjs/voice';
 import YouTube from 'youtube-sr';
-import { FilterList, buildTimeCode, last, parseMS } from '../utils';
+import {
+    FilterList,
+    buildTimeCode,
+    last,
+    parseMS,
+    createEmbed
+} from '../utils';
 import { Client } from '../extensions';
 import { generateDependencyReport } from '@discordjs/voice';
 import { opus, FFmpeg } from 'prism-media';
 
-class Queue<T = unknown> {
+class Queue {
     public readonly guild: Guild;
     public readonly client: Client;
     public connection: StreamDispatcher;
@@ -32,7 +40,7 @@ class Queue<T = unknown> {
     public previousTracks: Track[] = [];
     public options: PlayerOptions;
     public playing = false;
-    public metadata?: T = null;
+    public metadata?: CommandInteraction = null;
     public repeatMode: QueueRepeatMode = 0;
     public readonly id: Snowflake = SnowflakeUtil.generate();
     private _streamTime = 0;
@@ -72,7 +80,7 @@ class Queue<T = unknown> {
 
     get current() {
         if (this.#watchDestroyed()) return;
-        return this.connection.audioResource?.metadata ?? this.tracks[0];
+        return last(this.previousTracks);
     }
 
     get destroyed() {
@@ -96,40 +104,54 @@ class Queue<T = unknown> {
         this.connection = connection;
 
         if (_channel.type === 'GUILD_STAGE_VOICE') {
-            await _channel.guild.me.voice
-                .setSuppressed(false)
-                .catch(async () => {
-                    return await _channel.guild.me.voice
-                        .setRequestToSpeak(true)
-                        .catch(() => {});
-                });
+            await _channel.guild.me.voice.setSuppressed(false).catch(() => {
+                _channel.guild.me.voice.setRequestToSpeak(true).catch(() => {});
+            });
         }
 
         this.connection.on('start', (resource) => {
-            if (this.#watchDestroyed(false)) return;
+            if (this.#watchDestroyed()) return;
             this.playing = true;
             if (!this._filtersUpdate && resource?.metadata) {
+                // DONE: Send track started message
+                this.metadata
+                    .followUp({
+                        ephemeral: true,
+                        embeds: [
+                            createEmbed()
+                                .setAuthor('Now playing')
+                                .setTitle(resource.metadata.title)
+                                .setURL(resource.metadata.url)
+                                .setThumbnail(resource.metadata.thumbnail)
+                        ]
+                    })
+                    .catch(() => {});
             }
-            // TODO: Send track start message
             this._filtersUpdate = false;
         });
 
         this.connection.on('finish', async (resource) => {
-            if (this.#watchDestroyed(false)) return;
+            if (this.#watchDestroyed()) return;
             this.playing = false;
             if (this._filtersUpdate) return;
             this._streamTime = 0;
             if (resource && resource.metadata)
                 this.previousTracks.push(resource.metadata);
 
-            // TODO: Send track ended message
+            // Track ended
 
             if (
                 !this.tracks.length &&
                 this.repeatMode === QueueRepeatMode.OFF
             ) {
-                if (this.options.leaveOnEnd) this.destroy();
-                // TODO: Send queue ended message
+                this.destroy();
+                // DONE: Send queue ended message
+                this.metadata
+                    .followUp({
+                        ephemeral: true,
+                        content: 'Queue has ended!'
+                    })
+                    .catch(() => {});
             } else {
                 if (this.repeatMode !== QueueRepeatMode.AUTOPLAY) {
                     if (this.repeatMode === QueueRepeatMode.TRACK)
@@ -170,13 +192,11 @@ class Queue<T = unknown> {
     addTrack(track: Track) {
         if (this.#watchDestroyed()) return;
         this.tracks.push(track);
-        // TODO: Send track added message
     }
 
     addTracks(tracks: Track[]) {
         if (this.#watchDestroyed()) return;
         this.tracks.push(...tracks);
-        // TODO: Send tracks added message
     }
 
     setPaused(paused?: boolean) {
@@ -350,14 +370,14 @@ class Queue<T = unknown> {
         if (this.#watchDestroyed()) return;
         // remove the track if exists
         const foundTrack = this.remove(track);
-        this.tracks.splice(1, 0, foundTrack);
+        this.tracks.unshift(this.current);
+        this.tracks.unshift(foundTrack);
 
         return void this.skip();
     }
 
     insert(track: Track, index = 0) {
         this.tracks.splice(index, 0, track);
-        // TODO: Send track added message
     }
 
     getPlayerTimestamp() {
@@ -428,7 +448,7 @@ class Queue<T = unknown> {
     }
 
     async play(src?: Track, options: PlayOptions = {}): Promise<void> {
-        if (this.#watchDestroyed(false)) return;
+        if (this.#watchDestroyed()) return;
         if (!this.connection || !this.connection.voiceConnection)
             throw new Error(
                 'Voice connection is not available, use <Queue>.connect()!'
@@ -449,17 +469,26 @@ class Queue<T = unknown> {
         }
 
         let stream: opus.Encoder | FFmpeg;
-        if (['youtube', 'spotify'].includes(track.raw.source)) {
-            if (track.raw.source === 'spotify' && !track.raw.engine) {
+        if (['youtube', 'spotify', 'deezer'].includes(track.raw.source)) {
+            if (
+                (track.raw.source === 'spotify' ||
+                    track.raw.source === 'deezer') &&
+                !track.raw.engine
+            ) {
                 track.raw.engine = await YouTube.search(
                     `${track.author} ${track.title}`,
                     { type: 'video' }
                 )
-                    .then((x) => x[0].url)
+                    .then((x) => {
+                        track.duration = buildTimeCode(parseMS(x[0].duration));
+                        return x[0].url;
+                    })
                     .catch(() => null);
             }
             const link =
-                track.raw.source === 'spotify' ? track.raw.engine : track.url;
+                track.raw.source === 'spotify' || track.raw.source === 'deezer'
+                    ? track.raw.engine
+                    : track.url;
             if (!link)
                 return void this.play(this.tracks.shift(), { immediate: true });
 
@@ -472,15 +501,12 @@ class Queue<T = unknown> {
                         ? ['-af', FilterList.create(this._activeFilters)]
                         : [],
                 seek: options.seek ? options.seek / 1000 : undefined,
-                highWaterMark: 1 << 25,
-                requestOptions: {
-                    headers: {
-                        Cookie: 'CONSENT=YES+srp.gws-20211018-0-RC1.fr+FX+843; SID=DQhsYnxL8X7HdVJRfj0f2DFKSqicDRkRO-HCpD-PrLVsjGZ9CqjHwUrrd3lcSAt2vF6q9w.; APISID=vprA6YqG25gcjeVv/AdRPFdnoCbr97sMvf; SAPISID=AODaHwyMwH-jTM9w/ApeiQqcTLa3vg7o1U; __Secure-1PAPISID=AODaHwyMwH-jTM9w/ApeiQqcTLa3vg7o1U; __Secure-3PAPISID=AODaHwyMwH-jTM9w/ApeiQqcTLa3vg7o1U; PREF=tz=Europe.Paris&f6=400&f5=30000; wide=1; SIDCC=AJi4QfFs9y6yhfTUudgwVLEDhlaUraRSGdL4ko_baVBfNZNN9b3_OjbiDWnQcdjHXfDzRXh3wZA',
-                        'x-youtube-identity-token':
-                            'QUFFLUhqbTZkNkxHZGFsenc1MUl2aDB6d0FVM2p2enJlQXw\u003d'
-                    }
-                }
-            }).on('error', console.log);
+                highWaterMark: 1 << 25
+            }).on('error', (err) =>
+                err.message.toLowerCase().includes('premature close')
+                    ? void 0
+                    : this.connection.emit('error', err)
+            );
         } else {
             stream = ytdl
                 .arbitraryStream(
@@ -502,7 +528,11 @@ class Queue<T = unknown> {
                         seek: options.seek ? options.seek / 1000 : 0
                     }
                 )
-                .on('error', console.log);
+                .on('error', (err) =>
+                    err.message.toLowerCase().includes('premature close')
+                        ? void 0
+                        : this.connection.emit('error', err)
+                );
         }
 
         const resource: AudioResource<Track> = this.connection.createStream(
@@ -524,17 +554,34 @@ class Queue<T = unknown> {
 
     private async _handleAutoplay(track: Track): Promise<void> {
         if (this.#watchDestroyed()) return;
-        if (!track || ![track.source, track.raw?.source].includes('youtube')) {
-            if (this.options.leaveOnEnd) this.destroy();
-            // TODO: Send queue ended message
+        if (
+            !track ||
+            ![track.source, track.raw?.source, track.raw?.engine].includes(
+                'youtube'
+            )
+        ) {
+            this.destroy();
+            // DONE: Send queue ended message
+            this.metadata
+                .followUp({
+                    ephemeral: true,
+                    content: 'Queue has ended!'
+                })
+                .catch(() => {});
             return;
         }
-        const info = await YouTube.getVideo(track.url)
+        const info = await YouTube.getVideo(track.raw?.engine ?? track.url)
             .then((x) => x.videos[0])
             .catch(() => {});
         if (!info) {
-            if (this.options.leaveOnEnd) this.destroy();
-            // TODO: Send queue ended message
+            this.destroy();
+            // DONE: Send queue ended message
+            this.metadata
+                .followUp({
+                    ephemeral: true,
+                    content: 'Queue has ended!'
+                })
+                .catch(() => {});
             return;
         }
 
@@ -582,17 +629,8 @@ class Queue<T = unknown> {
             .join('\n')}`;
     }
 
-    #watchDestroyed(emit = true) {
-        if (this.#destroyed) {
-            if (emit)
-                this.client.emit(
-                    'error',
-                    new Error('Cannot use destroyed queue')
-                );
-            return true;
-        }
-
-        return false;
+    #watchDestroyed() {
+        return this.#destroyed;
     }
 
     #getBufferingTimeout() {

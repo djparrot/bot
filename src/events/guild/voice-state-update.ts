@@ -48,7 +48,7 @@ export const listener: EventListener<'voiceStateUpdate'> = {
 
         if (oldState.member.id === client.user.id && !newState.channelId) {
             queue.destroy();
-            return; // TODO: Send error message to the user
+            return;
         }
 
         if (!queue.connection || !queue.connection.channel) return;
