@@ -34,40 +34,46 @@ export const command: Command = {
         const type = interaction.options.getString('type');
         let query = interaction.options.getString('query');
 
-        await interaction.deferReply();
+        await interaction.deferReply().catch(() => {});
 
         if (type && !query.includes('https://') && type !== 'song') {
             switch (type) {
                 case 'artist':
                     const artist = await searchSpotifyArtist(client, query);
                     if (artist instanceof Error) {
-                        return interaction.followUp({
-                            content:
-                                '<:deny:905916059993923595> No results found!',
-                            ephemeral: true
-                        });
+                        return interaction
+                            .followUp({
+                                content:
+                                    '<:deny:905916059993923595> No results found!',
+                                ephemeral: true
+                            })
+                            .catch(() => {});
                     }
                     query = artist;
                     break;
                 case 'playlist':
                     const playlist = await searchSpotifyPlaylist(client, query);
                     if (playlist instanceof Error) {
-                        return interaction.followUp({
-                            content:
-                                '<:deny:905916059993923595> No results found!',
-                            ephemeral: true
-                        });
+                        return interaction
+                            .followUp({
+                                content:
+                                    '<:deny:905916059993923595> No results found!',
+                                ephemeral: true
+                            })
+                            .catch(() => {});
                     }
                     query = playlist;
                     break;
                 case 'album':
                     const album = await searchSpotifyAlbum(client, query);
                     if (album instanceof Error) {
-                        return interaction.followUp({
-                            content:
-                                '<:deny:905916059993923595> No results found!',
-                            ephemeral: true
-                        });
+                        return interaction
+                            .followUp({
+                                content:
+                                    '<:deny:905916059993923595> No results found!',
+                                ephemeral: true
+                            })
+                            .catch(() => {});
                     }
                     query = album;
                     break;
@@ -80,10 +86,12 @@ export const command: Command = {
             })
             .catch(() => {});
         if (!searchResult || !searchResult.tracks.length)
-            return void interaction.followUp({
-                content: '<:deny:905916059993923595> No results found!',
-                ephemeral: true
-            });
+            return void interaction
+                .followUp({
+                    content: '<:deny:905916059993923595> No results found!',
+                    ephemeral: true
+                })
+                .catch(() => {});
 
         const queue = client.createQueue(interaction.guild, {
             metadata: interaction
@@ -96,11 +104,13 @@ export const command: Command = {
                 );
         } catch {
             void client.deleteQueue(interaction.guildId);
-            return void interaction.followUp({
-                content:
-                    '<:deny:905916059993923595> Could not join your voice channel!',
-                ephemeral: true
-            });
+            return void interaction
+                .followUp({
+                    content:
+                        '<:deny:905916059993923595> Could not join your voice channel!',
+                    ephemeral: true
+                })
+                .catch(() => {});
         }
 
         if (
@@ -109,40 +119,44 @@ export const command: Command = {
         )
             queue.connection.on('error', (error) => {
                 logger.log(error);
-                queue.metadata.followUp({
-                    ephemeral: true,
-                    content:
-                        '<:deny:905916059993923595> An error occurred while playing this song, you may need to skip this song.'
-                });
+                queue.metadata
+                    .followUp({
+                        ephemeral: true,
+                        content:
+                            '<:deny:905916059993923595> An error occurred while playing this song, you may need to skip this song.'
+                    })
+                    .catch(() => {});
             });
 
-        await interaction.followUp({
-            embeds: [
-                createEmbed()
-                    .setAuthor(
-                        searchResult.playlist
-                            ? `${formatCase(
-                                  searchResult.playlist.type
-                              )} added to the queue`
-                            : 'Song added to the queue'
-                    )
-                    .setTitle(
-                        searchResult.playlist
-                            ? searchResult.playlist.title
-                            : searchResult.tracks[0].title
-                    )
-                    .setThumbnail(
-                        searchResult.playlist
-                            ? searchResult.playlist.thumbnail
-                            : searchResult.tracks[0].thumbnail
-                    )
-                    .setURL(
-                        searchResult.playlist
-                            ? searchResult.playlist.url
-                            : searchResult.tracks[0].url
-                    )
-            ]
-        });
+        await interaction
+            .followUp({
+                embeds: [
+                    createEmbed()
+                        .setAuthor(
+                            searchResult.playlist
+                                ? `${formatCase(
+                                      searchResult.playlist.type
+                                  )} added to the queue`
+                                : 'Song added to the queue'
+                        )
+                        .setTitle(
+                            searchResult.playlist
+                                ? searchResult.playlist.title
+                                : searchResult.tracks[0].title
+                        )
+                        .setThumbnail(
+                            searchResult.playlist
+                                ? searchResult.playlist.thumbnail
+                                : searchResult.tracks[0].thumbnail
+                        )
+                        .setURL(
+                            searchResult.playlist
+                                ? searchResult.playlist.url
+                                : searchResult.tracks[0].url
+                        )
+                ]
+            })
+            .catch(() => {});
         searchResult.playlist
             ? queue.addTracks(searchResult.tracks)
             : queue.addTrack(searchResult.tracks[0]);

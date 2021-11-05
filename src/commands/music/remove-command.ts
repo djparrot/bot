@@ -33,20 +33,26 @@ export const command: Command = {
         }
 
         if (!track || (typeof track === 'number' && !queue.tracks[track]))
-            return interaction.reply({
-                ephemeral: true,
-                content: '<:deny:905916059993923595> Track not found!'
-            });
+            return interaction
+                .reply({
+                    ephemeral: true,
+                    content: '<:deny:905916059993923595> Track not found!'
+                })
+                .catch(() => {});
 
         const removedTrack = queue.remove(track);
         if (!removedTrack)
-            return interaction.reply({
-                ephemeral: true,
-                content: '<:deny:905916059993923595> Track not found!'
-            });
+            return interaction
+                .reply({
+                    ephemeral: true,
+                    content: '<:deny:905916059993923595> Track not found!'
+                })
+                .catch(() => {});
 
-        interaction.reply({
-            content: `<:check:905916070471295037> Removed ${removedTrack.title}!`
-        });
+        interaction
+            .reply({
+                content: `<:check:905916070471295037> Removed ${removedTrack.title}!`
+            })
+            .catch(() => {});
     }
 };

@@ -1,5 +1,5 @@
 import { EventListener } from '../event-handler';
-// import { Api } from '@top-gg/sdk';
+import { Api } from '@top-gg/sdk';
 
 export const listener: EventListener<'ready'> = {
     event: 'ready',
@@ -10,12 +10,12 @@ export const listener: EventListener<'ready'> = {
             url: 'https://djparrot.xyz'
         });
 
-        /*const dblapi = new Api(process.env.TOPGG_API_TOKEN);
+        const dblapi = new Api(process.env.TOPGG_API_TOKEN);
         setInterval(() => {
             dblapi.postStats({
                 serverCount: client.guilds.cache.size,
                 shardCount: client.shard.count
             });
-        }, 1800000);*/
+        }, 1800000);
     }
 };

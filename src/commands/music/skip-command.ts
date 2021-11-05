@@ -11,8 +11,10 @@ export const command: Command = {
         const queue = client.getQueue(interaction.guildId);
 
         queue.skip();
-        interaction.reply({
-            content: '<:check:905916070471295037> Skipped to the next song!'
-        });
+        interaction
+            .reply({
+                content: '<:check:905916070471295037> Skipped to the next song!'
+            })
+            .catch(() => {});
     }
 };

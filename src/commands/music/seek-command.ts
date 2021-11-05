@@ -16,13 +16,15 @@ export const command: Command = {
     needsQueue: true,
     async run(client, interaction) {
         const queue = client.getQueue(interaction.guildId);
-        await interaction.deferReply();
+        await interaction.deferReply().catch(() => {});
 
         await queue.seek(interaction.options.getInteger('position') * 1000);
-        interaction.reply({
-            content: `<:check:905916070471295037> Seeked to ${formatDuration(
-                interaction.options.getInteger('position') * 1000
-            )}!`
-        });
+        interaction
+            .reply({
+                content: `<:check:905916070471295037> Seeked to ${formatDuration(
+                    interaction.options.getInteger('position') * 1000
+                )}!`
+            })
+            .catch(() => {});
     }
 };

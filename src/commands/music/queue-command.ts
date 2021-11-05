@@ -12,7 +12,7 @@ export const command: Command = {
     async run(client, interaction) {
         const queue = client.getQueue(interaction.guildId);
 
-        await interaction.deferReply();
+        await interaction.deferReply().catch(() => {});
 
         const tracks = queue.tracks.slice();
         tracks.unshift(last(queue.previousTracks));
@@ -49,7 +49,7 @@ export const command: Command = {
             );
         }
         if (embeds.length === 1) {
-            interaction.editReply({ embeds });
+            interaction.editReply({ embeds }).catch(() => {});
             return;
         }
 

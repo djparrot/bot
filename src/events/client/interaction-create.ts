@@ -12,12 +12,14 @@ export const listener: EventListener<'interactionCreate'> = {
         if (command.needsQueue) {
             const queue = client.getQueue(interaction.guildId);
             if (!queue)
-                return interaction.reply({
-                    content:
-                        '<:deny:905916059993923595> There is nothing playing in this server!',
+                return interaction
+                    .reply({
+                        content:
+                            '<:deny:905916059993923595> There is nothing playing in this server!',
 
-                    ephemeral: true
-                });
+                        ephemeral: true
+                    })
+                    .catch(() => {});
         }
 
         if (command.isDjCommand) {
@@ -32,10 +34,12 @@ export const listener: EventListener<'interactionCreate'> = {
                     (role) => role.name.toUpperCase() === 'DJ'
                 )
             )
-                return interaction.reply({
-                    ephemeral: true,
-                    content: '<:deny:905916059993923595> You are not a DJ!'
-                });
+                return interaction
+                    .reply({
+                        ephemeral: true,
+                        content: '<:deny:905916059993923595> You are not a DJ!'
+                    })
+                    .catch(() => {});
         }
 
         try {
@@ -43,16 +47,20 @@ export const listener: EventListener<'interactionCreate'> = {
         } catch (err: any) {
             logger.log(err);
             interaction.replied
-                ? await interaction.editReply({
-                      content:
-                          '<:deny:905916059993923595> An error occurred while executing this command'
-                  })
-                : await interaction.reply({
-                      content:
-                          '<:deny:905916059993923595> An error occurred while executing this command',
+                ? await interaction
+                      .editReply({
+                          content:
+                              '<:deny:905916059993923595> An error occurred while executing this command'
+                      })
+                      .catch(() => {})
+                : await interaction
+                      .reply({
+                          content:
+                              '<:deny:905916059993923595> An error occurred while executing this command',
 
-                      ephemeral: true
-                  });
+                          ephemeral: true
+                      })
+                      .catch(() => {});
         }
     }
 };

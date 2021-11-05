@@ -14,6 +14,6 @@ export const command: Command = {
                 'https://discord.com/oauth2/authorize?client_id=764418734747549696&scope=bot%20applications.commands&permissions=4331719680'
             );
 
-        interaction.reply({ embeds: [embed] });
+        interaction.reply({ embeds: [embed] }).catch(() => {});
     }
 };

@@ -69,11 +69,13 @@ export const command: Command = {
             filters[interaction.options.getString('filter')] = true;
 
             queue.setFilters(filters);
-            interaction.reply({
-                content: `<:check:905916070471295037> Added ${interaction.options.getString(
-                    'filter'
-                )}!`
-            });
+            interaction
+                .reply({
+                    content: `<:check:905916070471295037> Added ${interaction.options.getString(
+                        'filter'
+                    )}!`
+                })
+                .catch(() => {});
         } else {
             const _filters = queue.getFiltersEnabled();
             const filters = {};
@@ -84,11 +86,13 @@ export const command: Command = {
             filters[interaction.options.getString('filter')] = false;
 
             queue.setFilters(filters);
-            interaction.reply({
-                content: `<:check:905916070471295037> Removed ${interaction.options.getString(
-                    'filter'
-                )}!`
-            });
+            interaction
+                .reply({
+                    content: `<:check:905916070471295037> Removed ${interaction.options.getString(
+                        'filter'
+                    )}!`
+                })
+                .catch(() => {});
         }
     }
 };

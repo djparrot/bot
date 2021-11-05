@@ -70,6 +70,6 @@ export const command: Command = {
                 }
             ]);
 
-        interaction.reply({ embeds: [embed] });
+        interaction.reply({ embeds: [embed] }).catch(() => {});
     }
 };

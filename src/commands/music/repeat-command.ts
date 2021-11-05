@@ -26,10 +26,12 @@ export const command: Command = {
         queue.setRepeatMode(
             interaction.options.getNumber('mode') as QueueRepeatMode
         );
-        interaction.reply({
-            content: `<:check:905916070471295037> Repeat mode updated to ${
-                QueueRepeatMode[interaction.options.getNumber('mode')]
-            }!`
-        });
+        interaction
+            .reply({
+                content: `<:check:905916070471295037> Repeat mode updated to ${
+                    QueueRepeatMode[interaction.options.getNumber('mode')]
+                }!`
+            })
+            .catch(() => {});
     }
 };

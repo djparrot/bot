@@ -11,8 +11,10 @@ export const command: Command = {
         const queue = client.getQueue(interaction.guildId);
 
         queue.setPaused(true);
-        interaction.reply({
-            content: `<:check:905916070471295037> Paused!`
-        });
+        interaction
+            .reply({
+                content: `<:check:905916070471295037> Paused!`
+            })
+            .catch(() => {});
     }
 };

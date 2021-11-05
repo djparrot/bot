@@ -11,8 +11,10 @@ export const command: Command = {
         const queue = client.getQueue(interaction.guildId);
 
         queue.stop();
-        interaction.reply({
-            content: '<:check:905916070471295037> Destroyed the queue!'
-        });
+        interaction
+            .reply({
+                content: '<:check:905916070471295037> Destroyed the queue!'
+            })
+            .catch(() => {});
     }
 };

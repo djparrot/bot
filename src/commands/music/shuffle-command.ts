@@ -11,8 +11,10 @@ export const command: Command = {
         const queue = client.getQueue(interaction.guildId);
 
         queue.shuffle();
-        interaction.reply({
-            content: `<:check:905916070471295037> Queue shuffled!`
-        });
+        interaction
+            .reply({
+                content: `<:check:905916070471295037> Queue shuffled!`
+            })
+            .catch(() => {});
     }
 };

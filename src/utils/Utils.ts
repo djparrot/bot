@@ -154,10 +154,12 @@ export async function pagination(
         nextButton
     );
 
-    const current = (await interaction.editReply({
-        embeds: [embeds[page]],
-        components: [row]
-    })) as Message;
+    const current = (await interaction
+        .editReply({
+            embeds: [embeds[page]],
+            components: [row]
+        })
+        .catch(() => {})) as Message;
 
     const collector =
         current.createMessageComponentCollector<MessageComponentType>({
@@ -178,10 +180,12 @@ export async function pagination(
         }
 
         await i.deferUpdate();
-        await i.editReply({
-            embeds: [embeds[page]],
-            components: [row]
-        });
+        await i
+            .editReply({
+                embeds: [embeds[page]],
+                components: [row]
+            })
+            .catch(() => {});
         collector.resetTimer();
     });
 

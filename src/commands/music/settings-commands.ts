@@ -19,11 +19,13 @@ export const command: Command = {
                 'MANAGE_GUILD'
             )
         )
-            return interaction.reply({
-                content:
-                    "<:deny:905916059993923595> You don't have enough permissions! (Manage Guild)",
-                ephemeral: true
-            });
+            return interaction
+                .reply({
+                    content:
+                        "<:deny:905916059993923595> You don't have enough permissions! (Manage Guild)",
+                    ephemeral: true
+                })
+                .catch(() => {});
 
         const settings = await client.db.getGuild(interaction.guildId);
         const guild = client.guilds.cache.get(interaction.guildId);
@@ -41,10 +43,12 @@ export const command: Command = {
             djmod: !settings.djmod
         });
 
-        interaction.followUp({
-            content: settings.djmod
-                ? '<:check:905916070471295037> DJ mod has been disabled'
-                : '<:check:905916070471295037> DJ mod has been enabled'
-        });
+        interaction
+            .followUp({
+                content: settings.djmod
+                    ? '<:check:905916070471295037> DJ mod has been disabled'
+                    : '<:check:905916070471295037> DJ mod has been enabled'
+            })
+            .catch(() => {});
     }
 };

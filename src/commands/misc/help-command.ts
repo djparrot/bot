@@ -30,7 +30,7 @@ export const command: Command = {
                         )}\``
                 )
                 .setTitle(formatCase(command.builder.name));
-            interaction.reply({ embeds: [embed] });
+            interaction.reply({ embeds: [embed] }).catch(() => {});
         } else {
             const help: {
                 [category: string]: Array<Command>;
@@ -60,7 +60,7 @@ export const command: Command = {
                 );
             }
 
-            interaction.reply({ embeds: [embed] });
+            interaction.reply({ embeds: [embed] }).catch(() => {});
         }
     }
 };

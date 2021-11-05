@@ -63,7 +63,7 @@ export const command: Command = {
                 )
         ),
     async run(client, interaction) {
-        await interaction.deferReply();
+        await interaction.deferReply().catch(() => {});
 
         switch (interaction.options.getSubcommand()) {
             case 'list':
@@ -118,7 +118,7 @@ export const command: Command = {
                 }
 
                 if (embeds.length === 1) {
-                    interaction.editReply({ embeds });
+                    interaction.editReply({ embeds }).catch(() => {});
                     return;
                 }
 
@@ -139,22 +139,30 @@ async function deletePlaylist(interaction: CommandInteraction, client: Client) {
     });
 
     if (!playlist)
-        return await interaction.followUp({
-            content: '<:deny:905916059993923595> This playlist does not exist!',
-            ephemeral: true
-        });
+        return await interaction
+            .followUp({
+                content:
+                    '<:deny:905916059993923595> This playlist does not exist!',
+                ephemeral: true
+            })
+            .catch(() => {});
 
     if (playlist.owner.id !== interaction.user.id)
-        return await interaction.followUp({
-            content:
-                '<:deny:905916059993923595> You are not the owner of this playlist!',
-            ephemeral: true
-        });
+        return await interaction
+            .followUp({
+                content:
+                    '<:deny:905916059993923595> You are not the owner of this playlist!',
+                ephemeral: true
+            })
+            .catch(() => {});
 
     await playlistModel.deleteOne({ _id: playlist._id });
-    await interaction.editReply({
-        content: '<:check:905916059997102080> The playlist has been deleted!'
-    });
+    await interaction
+        .editReply({
+            content:
+                '<:check:905916059997102080> The playlist has been deleted!'
+        })
+        .catch(() => {});
 }
 
 async function createPlaylist(interaction: CommandInteraction, client: Client) {
@@ -166,17 +174,23 @@ async function createPlaylist(interaction: CommandInteraction, client: Client) {
     });
 
     if (playlist)
-        return await interaction.followUp({
-            content: '<:deny:905916059993923595> This playlist already exists!',
-            ephemeral: true
-        });
+        return await interaction
+            .followUp({
+                content:
+                    '<:deny:905916059993923595> This playlist already exists!',
+                ephemeral: true
+            })
+            .catch(() => {});
 
     const queue = client.getQueue(interaction.guild);
     if (!queue)
-        return await interaction.followUp({
-            content: '<:deny:905916059993923595> There is no queue to save!',
-            ephemeral: true
-        });
+        return await interaction
+            .followUp({
+                content:
+                    '<:deny:905916059993923595> There is no queue to save!',
+                ephemeral: true
+            })
+            .catch(() => {});
 
     const songs = queue.tracks.map((track) => track.toJSON());
 
@@ -193,9 +207,12 @@ async function createPlaylist(interaction: CommandInteraction, client: Client) {
     });
 
     await newPlaylist.save();
-    await interaction.editReply({
-        content: '<:check:905916059997102080> The playlist has been created!'
-    });
+    await interaction
+        .editReply({
+            content:
+                '<:check:905916059997102080> The playlist has been created!'
+        })
+        .catch(() => {});
 }
 
 async function loadPlaylist(interaction: CommandInteraction, client: Client) {
@@ -208,10 +225,12 @@ async function loadPlaylist(interaction: CommandInteraction, client: Client) {
         settings.djmod &&
         !member.roles.cache.find((role) => role.name.toUpperCase() === 'DJ')
     ) {
-        return await interaction.followUp({
-            content: '<:deny:905916059993923595> You are not a DJ!',
-            ephemeral: true
-        });
+        return await interaction
+            .followUp({
+                content: '<:deny:905916059993923595> You are not a DJ!',
+                ephemeral: true
+            })
+            .catch(() => {});
     }
 
     const playlist = await playlistModel.findOne({
@@ -219,10 +238,13 @@ async function loadPlaylist(interaction: CommandInteraction, client: Client) {
     });
 
     if (!playlist)
-        return await interaction.followUp({
-            content: '<:deny:905916059993923595> This playlist does not exist!',
-            ephemeral: true
-        });
+        return await interaction
+            .followUp({
+                content:
+                    '<:deny:905916059993923595> This playlist does not exist!',
+                ephemeral: true
+            })
+            .catch(() => {});
 
     await playlistModel.updateOne(
         { _id: playlist._id },
@@ -244,11 +266,13 @@ async function loadPlaylist(interaction: CommandInteraction, client: Client) {
             );
     } catch {
         void client.deleteQueue(interaction.guildId);
-        return void interaction.followUp({
-            content:
-                '<:deny:905916059993923595> Could not join your voice channel!',
-            ephemeral: true
-        });
+        return void interaction
+            .followUp({
+                content:
+                    '<:deny:905916059993923595> Could not join your voice channel!',
+                ephemeral: true
+            })
+            .catch(() => {});
     }
 
     if (
@@ -257,29 +281,33 @@ async function loadPlaylist(interaction: CommandInteraction, client: Client) {
     )
         queue.connection.on('error', (error) => {
             logger.log(error);
-            queue.metadata.followUp({
-                ephemeral: true,
-                content:
-                    '<:deny:905916059993923595> An error occurred while playing this song, you may need to skip this song.'
-            });
+            queue.metadata
+                .followUp({
+                    ephemeral: true,
+                    content:
+                        '<:deny:905916059993923595> An error occurred while playing this song, you may need to skip this song.'
+                })
+                .catch(() => {});
         });
 
-    await interaction.followUp({
-        embeds: [
-            createEmbed()
-                .setAuthor('Playlist added to the queue')
-                .setTitle(playlist._id)
-                .setThumbnail(
-                    playlist.songs[0].thumbnail ??
-                        'https://djparrot.xyz/DJParrot.png'
-                )
-                .setURL(
-                    `https://djparrot.xyz/playlist?id=${encodeURIComponent(
-                        playlist._id
-                    )}`
-                )
-        ]
-    });
+    await interaction
+        .followUp({
+            embeds: [
+                createEmbed()
+                    .setAuthor('Playlist added to the queue')
+                    .setTitle(playlist._id)
+                    .setThumbnail(
+                        playlist.songs[0].thumbnail ??
+                            'https://djparrot.xyz/DJParrot.png'
+                    )
+                    .setURL(
+                        `https://djparrot.xyz/playlist?id=${encodeURIComponent(
+                            playlist._id
+                        )}`
+                    )
+            ]
+        })
+        .catch(() => {});
 
     let played = false;
     for (const song of playlist.songs) {

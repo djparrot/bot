@@ -15,13 +15,15 @@ export const command: Command = {
     async run(client, interaction) {
         const queue = client.getQueue(interaction.guildId);
         if (!queue)
-            return interaction.reply({
-                content:
-                    '<:deny:905916059993923595> There is nothing playing in this server!',
-                ephemeral: true
-            });
+            return interaction
+                .reply({
+                    content:
+                        '<:deny:905916059993923595> There is nothing playing in this server!',
+                    ephemeral: true
+                })
+                .catch(() => {});
 
-        await interaction.deferReply();
+        await interaction.deferReply().catch(() => {});
 
         let isValid: boolean;
         try {
@@ -50,6 +52,6 @@ export const command: Command = {
             image.setAlbum(queue.current.playlist.title);
 
         const png = await image.build();
-        interaction.editReply({ files: [png] });
+        interaction.editReply({ files: [png] }).catch(() => {});
     }
 };
