@@ -1,4 +1,3 @@
-import { validateID, validateURL } from 'ytdl-core';
 import { YouTube } from 'youtube-sr';
 import { QueryType } from '../interfaces';
 // @ts-ignore
@@ -12,6 +11,8 @@ const spotifyAlbumRegex =
     /https?:\/\/(?:embed\.|open\.)(?:spotify\.com\/)(?:album\/|\?uri=spotify:album:)((\w|-){22})/;
 const spotifyArtistRegex =
     /https?:\/\/(?:embed\.|open\.)(?:spotify\.com\/)(?:artist\/|\?uri=spotify:artist:)((\w|-){22})/;
+const youtubeUrlRegex =
+    /^https?:\/\/(?:(?:www|m)\.)?(?:youtube\.com\/watch(?:\?v=|\?.+?&v=)|youtu\.be\/)([a-z0-9_-]+)$/i;
 
 class QueryResolver {
     static resolve(query: string): QueryType {
@@ -23,8 +24,7 @@ class QueryResolver {
         )
             return QueryType.SOUNDCLOUD_PLAYLIST;
         if (YouTube.isPlaylist(query)) return QueryType.YOUTUBE_PLAYLIST;
-        if (validateID(query) || validateURL(query))
-            return QueryType.YOUTUBE_VIDEO;
+        if (youtubeUrlRegex.test(query)) return QueryType.YOUTUBE_VIDEO;
         if (spotifySongRegex.test(query)) return QueryType.SPOTIFY_SONG;
         if (spotifyPlaylistRegex.test(query)) return QueryType.SPOTIFY_PLAYLIST;
         if (spotifyAlbumRegex.test(query)) return QueryType.SPOTIFY_ALBUM;

@@ -494,14 +494,22 @@ class Queue {
 
             stream = ytdl(link, {
                 opusEncoded: false,
-                filter: 'audioonly',
+                filter: track.durationMS ? 'audioandvideo' : 'audioonly',
                 fmt: 's16le',
                 encoderArgs:
                     options.encoderArgs ?? this._activeFilters.length
                         ? ['-af', FilterList.create(this._activeFilters)]
                         : [],
                 seek: options.seek ? options.seek / 1000 : undefined,
-                highWaterMark: 1 << 25
+                highWaterMark: 1 << 25,
+                requestOptions: {
+                    headers: {
+                        cookie: process.env.YOUTUBE_COOKIE,
+                        'x-youtube-identity-token': process.env.YOUTUBE_TOKEN,
+                        'user-agent':
+                            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36'
+                    }
+                }
             }).on('error', (err) =>
                 err.message.toLowerCase().includes('premature close')
                     ? void 0
