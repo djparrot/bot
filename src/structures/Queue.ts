@@ -575,9 +575,11 @@ class Queue {
         if (this.#watchDestroyed()) return;
         if (
             !track ||
-            ![track.source, track.raw?.source, track.raw?.engine].includes(
-                'youtube'
-            )
+            (![track.source, track.raw?.source].includes('youtube') &&
+                !(
+                    typeof track.raw?.engine === 'string' &&
+                    track.raw?.engine?.includes('youtu')
+                ))
         ) {
             this.destroy();
             // DONE: Send queue ended message
@@ -591,7 +593,7 @@ class Queue {
         }
         const info = await YouTube.getVideo(track.raw?.engine ?? track.url)
             .then((x) => x.videos[0])
-            .catch(() => {});
+            .catch(() => null);
         if (!info) {
             this.destroy();
             // DONE: Send queue ended message

@@ -30,21 +30,25 @@ export const loadCommands = async (client: Client) => {
             }
         });
 
-    /*await client.restClient.put(Routes.applicationCommands(client.user.id), {
-        body: client.commands.map((cmd) => {
-            const raw = cmd.builder.toJSON();
-            if (raw.name === 'volume') {
-                const option = raw.options.find(
-                    (opts) => opts.type === ApplicationCommandOptionType.Integer
-                );
-                // @ts-ignore
-                option.min_value = 0;
-                // @ts-ignore
-                option.max_value = 200;
-            }
-            return raw;
-        })
-    });*/
+    await client.restClient.put(
+        Routes.applicationGuildCommands(client.user.id, '745955508640415764'),
+        {
+            body: client.commands.map((cmd) => {
+                const raw = cmd.builder.toJSON();
+                if (raw.name === 'volume') {
+                    const option = raw.options.find(
+                        (opts) =>
+                            opts.type === ApplicationCommandOptionType.Integer
+                    );
+                    // @ts-ignore
+                    option.min_value = 0;
+                    // @ts-ignore
+                    option.max_value = 200;
+                }
+                return raw;
+            })
+        }
+    );
 };
 
 export interface Command {

@@ -1,4 +1,5 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
+import { formatDuration } from '../../utils';
 import { Command } from '../command-handler';
 
 export const command: Command = {
@@ -35,8 +36,8 @@ export const command: Command = {
         await queue.seek(ms);
         interaction
             .editReply({
-                content: `<:check:905916070471295037> Seeked to ${interaction.options.getString(
-                    'position'
+                content: `<:check:905916070471295037> Seeked to ${formatDuration(
+                    ms
                 )}!`
             })
             .catch(() => {});
