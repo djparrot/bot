@@ -25,7 +25,7 @@ export default async function api(client: Client) {
     app.get('/login', (req, res) => {
         connections.set(req.query.state as string, null);
         res.redirect(
-            `https://discord.com/api/oauth2/authorize?client_id=764418734747549696&redirect_uri=https%3A%2F%2Fdjparrot.herokuapp.com%2Fcallback&response_type=code&scope=identify%20guilds&state=${
+            `https://discord.com/api/oauth2/authorize?client_id=764418734747549696&redirect_uri=https%3A%2F%2Fapi.djparrot.xyz%2Fcallback&response_type=code&scope=identify%20guilds&state=${
                 req.query.state as string
             }`
         );
@@ -42,7 +42,7 @@ export default async function api(client: Client) {
                 client_secret: process.env.DISCORD_SECRET,
                 grant_type: 'authorization_code',
                 code: req.query.code as string,
-                redirect_uri: 'https://djparrot.herokuapp.com/callback'
+                redirect_uri: 'https://api.djparrot.xyz/callback'
             })
         })
             .then((r) => r.json())
@@ -81,7 +81,7 @@ export default async function api(client: Client) {
 
     app.get('/invite', (req, res) => {
         res.redirect(
-            `https://discord.com/oauth2/authorize?client_id=764418734747549696&scope=bot%20applications.commands&permissions=3460160&guild_id=${req.query?.guildId}`
+            `https://discord.com/oauth2/authorize?client_id=764418734747549696&scope=bot%20applications.commands&permissions=3460160&guild_id=${req.query?.guildId}&redirect_uri=https%3A%2F%2Fapi.djparrot.xyz%2Fcallback`
         );
     });
 

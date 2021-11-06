@@ -591,7 +591,7 @@ class Queue {
                 .catch(() => {});
             return;
         }
-        const info = await YouTube.getVideo(track.raw?.engine ?? track.url)
+        const info: Video | null = await YouTube.getVideo(track.raw?.engine ?? track.url)
             .then((x) => x.videos[0])
             .catch(() => null);
         if (!info) {

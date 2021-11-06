@@ -1,6 +1,5 @@
 import { connect } from 'mongoose';
 import { userModel, guildModel, UserDB, GuildDB } from '../models';
-import { logger } from '.';
 import { Database } from '../interfaces';
 
 export default class MongoDB implements Database {
