@@ -30,7 +30,7 @@ export const loadCommands = async (client: Client) => {
             }
         });
 
-    await client.restClient.put(
+    /*await client.restClient.put(
         Routes.applicationGuildCommands(client.user.id, '745955508640415764'),
         {
             body: client.commands.map((cmd) => {
@@ -48,7 +48,7 @@ export const loadCommands = async (client: Client) => {
                 return raw;
             })
         }
-    );
+    );*/
 };
 
 export interface Command {
