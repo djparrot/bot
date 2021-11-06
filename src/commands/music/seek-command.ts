@@ -1,15 +1,14 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
-import { formatDuration } from '../../utils';
 import { Command } from '../command-handler';
 
 export const command: Command = {
     builder: new SlashCommandBuilder()
         .setName('seek')
         .setDescription('Seeks the playing song to the specified timestamp')
-        .addIntegerOption((input) =>
+        .addStringOption((input) =>
             input
-                .setName('position')
-                .setDescription('The timestamp to seek to (seconds)')
+                .setName('timestamp')
+                .setDescription('Timestamp (format: 00:00)')
                 .setRequired(true)
         ),
     isDjCommand: true,
@@ -18,11 +17,26 @@ export const command: Command = {
         const queue = client.getQueue(interaction.guildId);
         await interaction.deferReply().catch(() => {});
 
-        await queue.seek(interaction.options.getInteger('position') * 1000);
+        const pattern = /[0-9][0-9]?:[0-9][0-9]?/;
+        const timestamp = interaction.options.getString('timestamp');
+
+        if (!pattern.test(timestamp)) {
+            return await interaction.followUp({
+                ephemeral: true,
+                content:
+                    '<:deny:905916059993923595> Invalid timestamp format! Please use the format `00:00`.'
+            });
+        }
+
+        let ms: number;
+        const [minutes, seconds] = timestamp.split(':').map((s) => parseInt(s));
+        ms = minutes * 60 * 1000 + seconds * 1000;
+
+        await queue.seek(ms);
         interaction
-            .reply({
-                content: `<:check:905916070471295037> Seeked to ${formatDuration(
-                    interaction.options.getInteger('position') * 1000
+            .editReply({
+                content: `<:check:905916070471295037> Seeked to ${interaction.options.getString(
+                    'position'
                 )}!`
             })
             .catch(() => {});
