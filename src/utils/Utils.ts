@@ -195,10 +195,12 @@ export async function pagination(
                 previousButton.setDisabled(true),
                 nextButton.setDisabled(true)
             );
-            current.edit({
-                embeds: [embeds[page]],
-                components: [disabledRow]
-            });
+            current
+                .edit({
+                    embeds: [embeds[page]],
+                    components: [disabledRow]
+                })
+                .catch(() => {});
         }
     });
 }
