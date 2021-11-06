@@ -1,8 +1,8 @@
 import express from 'express';
 import 'dotenv/config';
-import { MessageEmbed, TextChannel } from 'discord.js';
+import { TextChannel } from 'discord.js';
 import Topgg from '@top-gg/sdk';
-import axios from 'axios';
+import fetch from 'node-fetch';
 import { URLSearchParams } from 'url';
 import { logger } from '..';
 import { Client } from '../../extensions';
@@ -32,24 +32,24 @@ export default async function api(client: Client) {
     });
 
     app.get('/callback', (req, res) => {
-        axios
-            .get('https://discord.com/api/oauth2/token', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                data: new URLSearchParams({
-                    client_id: '764418734747549696',
-                    client_secret: process.env.DISCORD_SECRET,
-                    grant_type: 'authorization_code',
-                    code: req.query.code as string,
-                    redirect_uri: 'https://djparrot.herokuapp.com/callback'
-                })
+        fetch('https://discord.com/api/oauth2/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({
+                client_id: '764418734747549696',
+                client_secret: process.env.DISCORD_SECRET,
+                grant_type: 'authorization_code',
+                code: req.query.code as string,
+                redirect_uri: 'https://djparrot.herokuapp.com/callback'
             })
+        })
+            .then((r) => r.json())
             .then((response) => {
                 fetch('https://discord.com/api/users/@me', {
                     headers: {
-                        Authorization: `${response.data.token_type} ${response.data.access_token}`
+                        Authorization: `${response.token_type} ${response.access_token}`
                     }
                 })
                     .then((result) => result.json())
