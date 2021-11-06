@@ -50,7 +50,7 @@ export const command: Command = {
                 },
                 {
                     name: '<:DJParrot:801150789829394442> Add DJ Parrot',
-                    value: '[Bot Invite](https://discord.com/oauth2/authorize?client_id=764418734747549696&scope=bot%20applications.commands&permissions=3460160)',
+                    value: '[Bot Invite](https://discord.com/oauth2/authorize?client_id=764418734747549696&scope=bot%20applications.commands&permissions=4331719680&redirect_uri=https%3A%2F%2Fdjparrot.xyz)',
                     inline: true
                 },
                 {

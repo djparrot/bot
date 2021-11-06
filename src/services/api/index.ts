@@ -81,7 +81,7 @@ export default async function api(client: Client) {
 
     app.get('/invite', (req, res) => {
         res.redirect(
-            `https://discord.com/oauth2/authorize?client_id=764418734747549696&scope=bot%20applications.commands&permissions=3460160&guild_id=${req.query?.guildId}&redirect_uri=https%3A%2F%2Fapi.djparrot.xyz%2Fcallback`
+            `https://discord.com/oauth2/authorize?client_id=764418734747549696&scope=bot%20applications.commands&permissions=4331719680&guild_id=${req.query?.guildId}&redirect_uri=https%3A%2F%2Fdjparrot.xyz`
         );
     });
 
