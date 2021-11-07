@@ -9,7 +9,6 @@ import { Client } from '../../extensions';
 import { playlistModel, userModel } from '../../models';
 import { createEmbed } from '../../utils';
 import config from '../../../config.json';
-console.log(config);
 
 const app = express();
 const TopggWebhook = new Topgg.Webhook(process.env.TOPGG_WEBHOOK_AUTH);
@@ -53,7 +52,6 @@ export default async function api(client: Client) {
         })
             .then((r) => r.json())
             .then((resp) => {
-                console.log(resp);
                 fetch('https://discord.com/api/users/@me', {
                     headers: {
                         Authorization: `${resp.token_type} ${resp.access_token}`
@@ -61,7 +59,6 @@ export default async function api(client: Client) {
                 })
                     .then((result) => result.json())
                     .then((response) => {
-                        console.log(response);
                         connections.set(req.query.state as string, response);
                         res.redirect(config['website-url']);
                     })
