@@ -63,8 +63,8 @@ export default class Logger {
         ].join(' ');
 
         (
-            Client.instance.channels.cache.get(config['logs']) as TextChannel
-        ).send(stripColors(log));
+            Client.instance?.channels?.cache?.get(config['logs']) as TextChannel
+        )?.send(stripColors(log));
         this.stream.write(stripColors(log) + '\n');
         console.log(log);
     }
