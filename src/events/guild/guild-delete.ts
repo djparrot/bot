@@ -6,7 +6,7 @@ import config from '../../../config.json';
 export const listener: EventListener<'guildDelete'> = {
     event: 'guildDelete',
     async run(client, guild) {
-        await client.db.deleteGuild(guild.id);
+        await client.db.deleteGuild(guild.id).catch(() => {});
         client.deleteQueue(guild.id);
         const owner = await guild.fetchOwner({ force: true }).catch(() => null);
         const logsEmbed = createEmbed()
