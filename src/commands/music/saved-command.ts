@@ -6,6 +6,7 @@ import { logger } from '../../services';
 import { createEmbed } from '../../utils';
 import { pagination } from '../../utils/Utils';
 import { Command } from '../command-handler';
+import config from '../../../config.json';
 
 export const command: Command = {
     builder: new SlashCommandBuilder()
@@ -79,7 +80,7 @@ export const command: Command = {
                     const embed = createEmbed()
                         .setTitle(`\`1.\` | \`${playlist._id}\``)
                         .setURL(
-                            `https://djparrot.xyz/playlist?id=${encodeURIComponent(
+                            `${config['website-url']}/playlist?id=${encodeURIComponent(
                                 playlist._id
                             )}`
                         )
@@ -88,7 +89,7 @@ export const command: Command = {
                             owner?.displayAvatarURL({ dynamic: true }) ??
                                 playlist.owner.avatar ??
                                 'https://djparrot.xyz/DJParrot.png',
-                            `https://djparrot.xyz/user?id=${playlist.owner.id}`
+                            `${config['website-url']}/user?id=${playlist.owner.id}`
                         )
                         .setDescription(
                             playlist.description ?? 'An error occurred'
@@ -301,7 +302,7 @@ async function loadPlaylist(interaction: CommandInteraction, client: Client) {
                             'https://djparrot.xyz/DJParrot.png'
                     )
                     .setURL(
-                        `https://djparrot.xyz/playlist?id=${encodeURIComponent(
+                        `${config['website-url']}/playlist?id=${encodeURIComponent(
                             playlist._id
                         )}`
                     )

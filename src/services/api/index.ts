@@ -1,5 +1,4 @@
 import express from 'express';
-import 'dotenv/config';
 import { TextChannel } from 'discord.js';
 import Topgg from '@top-gg/sdk';
 import fetch from 'node-fetch';
@@ -8,6 +7,7 @@ import { logger } from '..';
 import { Client } from '../../extensions';
 import { playlistModel, userModel } from '../../models';
 import { createEmbed } from '../../utils';
+import config from '../../../config.json';
 
 const app = express();
 const TopggWebhook = new Topgg.Webhook(process.env.TOPGG_WEBHOOK_AUTH);
@@ -25,7 +25,7 @@ export default async function api(client: Client) {
     app.get('/login', (req, res) => {
         connections.set(req.query.state as string, null);
         res.redirect(
-            `https://discord.com/api/oauth2/authorize?client_id=764418734747549696&redirect_uri=https%3A%2F%2Fapi.djparrot.xyz%2Fcallback&response_type=code&scope=identify%20guilds&state=${
+            `https://discord.com/api/oauth2/authorize?client_id=${client.user.id}&redirect_uri=${encodeURIComponent(config['callback-url'])}&response_type=code&scope=identify%20guilds&state=${
                 req.query.state as string
             }`
         );
@@ -38,11 +38,11 @@ export default async function api(client: Client) {
                 'Content-Type': 'application/x-www-form-urlencoded'
             },
             body: new URLSearchParams({
-                client_id: '764418734747549696',
+                client_id: client.user.id,
                 client_secret: process.env.DISCORD_SECRET,
                 grant_type: 'authorization_code',
                 code: req.query.code as string,
-                redirect_uri: 'https://api.djparrot.xyz/callback'
+                redirect_uri: encodeURIComponent(config['callback-url'])
             })
         })
             .then((r) => r.json())
@@ -55,22 +55,22 @@ export default async function api(client: Client) {
                     .then((result) => result.json())
                     .then((response) => {
                         connections.set(req.query.state as string, response);
-                        res.redirect('https://djparrot.xyz');
+                        res.redirect(config['website-url']);
                     })
                     .catch((err) => {
                         logger.log(err);
-                        res.redirect('https://djparrot.xyz');
+                        res.redirect(config['website-url']);
                     });
             })
             .catch((err) => {
                 logger.log(err);
-                res.redirect('https://djparrot.xyz');
+                res.redirect(config['website-url']);
             });
     });
 
     app.get('/logout', (req, res) => {
         connections.delete(req.query.state as string);
-        res.redirect('https://djparrot.xyz');
+        res.redirect(config['website-url']);
     });
 
     app.post('/auth', (req, res) => {
@@ -81,12 +81,12 @@ export default async function api(client: Client) {
 
     app.get('/invite', (req, res) => {
         res.redirect(
-            `https://discord.com/oauth2/authorize?client_id=764418734747549696&scope=bot%20applications.commands&permissions=4331719680&guild_id=${req.query?.guildId}&redirect_uri=https%3A%2F%2Fdjparrot.xyz`
+            `https://discord.com/oauth2/authorize?client_id=${client.user.id}&scope=bot%20applications.commands&permissions=4331719680&guild_id=${req.query?.guildId}&redirect_uri=${encodeURIComponent(config['callback-url'])}`
         );
     });
 
     app.get('/discord', (_req, res) => {
-        res.redirect('https://discord.gg/AUfTUJA');
+        res.redirect(config['server-invite']);
     });
 
     app.post('/playlists', async (_req, res) => {
@@ -170,19 +170,19 @@ export default async function api(client: Client) {
                 .setTitle(`${user.username} has just voted!`)
                 .setThumbnail(user.displayAvatarURL({ dynamic: true }))
                 .setDescription(
-                    `${user.tag} gets 12 hours of DJ Parrot premium!\n\nYou can vote [here](https://top.gg/bot/764418734747549696/vote) every 12 hours`
+                    `${user.tag} gets 12 hours of ${client.user.username} premium!\n\nYou can vote [here](https://top.gg/bot/${client.user.id}/vote) every 12 hours`
                 )
                 .setFooter('Thank you for your support!');
             (
                 client.channels.cache.get('800304312471388181') as TextChannel
             ).send({ embeds: [embed] });
             user.send(
-                'Thanks for voting!\nTo thank you, I offer you 12h of DJ Parrot premium!\nHave a good day'
+                `Thanks for voting!\nTo thank you, I offer you 12h of ${client.user.username} premium!\nHave a good day`
             ).catch(() => {});
             client.guilds.cache
-                .get('745955508640415764')
+                .get(config['server-id'])
                 .members.cache.get(user.id)
-                ?.roles.add('777268865184563260');
+                ?.roles.add(config['voter-role']);
             let member = await client.db.getUser(user.id);
 
             if (member.premium) {
@@ -222,17 +222,17 @@ export default async function api(client: Client) {
                 });
                 (await client.users.fetch(user.id))
                     .send(
-                        'Your premium is over!\nUpvote DJ Parrot to get 12h of DJ Parrot premium! (https://top.gg/bot/764418734747549696/vote)'
+                        `Your premium is over!\nUpvote ${client.user.username} to get 12h of ${client.user.username} premium! (https://top.gg/bot/${client.user.id}/vote)`
                     )
                     .catch(() => {});
                 client.guilds.cache
-                    .get('745955508640415764')!
+                    .get(config['server-id'])!
                     .members.cache.get(user.id)
-                    ?.roles.remove('777268865184563260');
+                    ?.roles.remove(config['voter-role']);
                 client.guilds.cache
-                    .get('745955508640415764')!
+                    .get(config['server-id'])!
                     .members.cache.get(user.id)
-                    ?.roles.remove('777269242558939186');
+                    ?.roles.remove(config['premium-role']);
             }
         });
     }

@@ -16,11 +16,21 @@ export const command: Command = {
     async run(client, interaction) {
         const queue = client.getQueue(interaction.guildId);
 
-        queue.setVolume(interaction.options.getInteger('volume'));
-        interaction
-            .reply({
-                content: `<:check:905916070471295037> Volume set to ${queue.volume}!`
-            })
-            .catch(() => {});
+        const volume = interaction.options.getInteger('volume');
+
+        if (volume) {
+            queue.setVolume(volume);
+            interaction
+                .reply({
+                    content: `<:check:905916070471295037> Volume set to ${queue.volume}!`
+                })
+                .catch(() => {});
+        } else {
+            interaction
+                .reply({
+                    content: `The current volume is: ${queue.volume}`
+                })
+                .catch(() => {});
+        }
     }
 };

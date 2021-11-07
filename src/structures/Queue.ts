@@ -31,6 +31,7 @@ import {
 import { Client } from '../extensions';
 import { generateDependencyReport } from '@discordjs/voice';
 import { opus, FFmpeg } from 'prism-media';
+import { logger } from '../services';
 
 class Queue {
     public readonly guild: Guild;
@@ -591,10 +592,10 @@ class Queue {
                 .catch(() => {});
             return;
         }
-        const info: Video | null = await YouTube.getVideo(track.raw?.engine ?? track.url)
-            .then((x) => x.videos[0])
-            .catch(() => null);
-        if (!info) {
+        const info = await YouTube.getVideo(track.raw?.engine ?? track.url).catch((err) => logger.log(err));
+        // @ts-ignore
+        const video = info?.videos?.length ? info?.videos[0] : null;
+        if (!video) {
             this.destroy();
             // DONE: Send queue ended message
             this.metadata
@@ -607,18 +608,18 @@ class Queue {
         }
 
         const nextTrack = new Track(this.client, {
-            title: info.title,
-            url: `https://www.youtube.com/watch?v=${info.id}`,
-            duration: info.durationFormatted
-                ? buildTimeCode(parseMS(info.duration * 1000))
+            title: video.title,
+            url: `https://www.youtube.com/watch?v=${video.id}`,
+            duration: video.durationFormatted
+                ? buildTimeCode(parseMS(video.duration * 1000))
                 : '0:00',
             description: '',
             thumbnail:
-                typeof info.thumbnail === 'string'
-                    ? info.thumbnail
-                    : info.thumbnail.url,
-            views: info.views,
-            author: info.channel.name,
+                typeof video.thumbnail === 'string'
+                    ? video.thumbnail
+                    : video.thumbnail.url,
+            views: video.views,
+            author: video.channel.name,
             requestedBy: track.requestedBy,
             source: 'youtube'
         });
