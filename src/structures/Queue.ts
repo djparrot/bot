@@ -592,7 +592,9 @@ class Queue {
                 .catch(() => {});
             return;
         }
-        const info = await YouTube.getVideo(track.raw?.engine ?? track.url).catch((err) => logger.log(err));
+        const info = await YouTube.getVideo(
+            track.raw?.engine ?? track.url
+        ).catch((err) => logger.log(err));
         // @ts-ignore
         const video = info?.videos?.length ? info?.videos[0] : null;
         if (!video) {

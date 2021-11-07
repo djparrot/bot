@@ -80,9 +80,9 @@ export const command: Command = {
                     const embed = createEmbed()
                         .setTitle(`\`1.\` | \`${playlist._id}\``)
                         .setURL(
-                            `${config['website-url']}/playlist?id=${encodeURIComponent(
-                                playlist._id
-                            )}`
+                            `${
+                                config['website-url']
+                            }/playlist?id=${encodeURIComponent(playlist._id)}`
                         )
                         .setAuthor(
                             `${playlist.owner.username}#${playlist.owner.discriminator}`,
@@ -302,9 +302,9 @@ async function loadPlaylist(interaction: CommandInteraction, client: Client) {
                             'https://djparrot.xyz/DJParrot.png'
                     )
                     .setURL(
-                        `${config['website-url']}/playlist?id=${encodeURIComponent(
-                            playlist._id
-                        )}`
+                        `${
+                            config['website-url']
+                        }/playlist?id=${encodeURIComponent(playlist._id)}`
                     )
             ]
         })

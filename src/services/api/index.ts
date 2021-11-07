@@ -25,7 +25,11 @@ export default async function api(client: Client) {
     app.get('/login', (req, res) => {
         connections.set(req.query.state as string, null);
         res.redirect(
-            `https://discord.com/api/oauth2/authorize?client_id=${client.user.id}&redirect_uri=${encodeURIComponent(config['callback-url'])}&response_type=code&scope=identify%20guilds&state=${
+            `https://discord.com/api/oauth2/authorize?client_id=${
+                client.user.id
+            }&redirect_uri=${encodeURIComponent(
+                config['callback-url']
+            )}&response_type=code&scope=identify%20guilds&state=${
                 req.query.state as string
             }`
         );
@@ -46,14 +50,16 @@ export default async function api(client: Client) {
             })
         })
             .then((r) => r.json())
-            .then((response) => {
+            .then((resp) => {
+                console.log(resp);
                 fetch('https://discord.com/api/users/@me', {
                     headers: {
-                        Authorization: `${response.token_type} ${response.access_token}`
+                        Authorization: `${resp.token_type} ${resp.access_token}`
                     }
                 })
                     .then((result) => result.json())
                     .then((response) => {
+                        console.log(response);
                         connections.set(req.query.state as string, response);
                         res.redirect(config['website-url']);
                     })
@@ -68,7 +74,7 @@ export default async function api(client: Client) {
             });
     });
 
-    app.get('/logout', (req, res) => {
+    app.post('/logout', (req, res) => {
         connections.delete(req.query.state as string);
         res.redirect(config['website-url']);
     });
@@ -81,7 +87,11 @@ export default async function api(client: Client) {
 
     app.get('/invite', (req, res) => {
         res.redirect(
-            `https://discord.com/oauth2/authorize?client_id=${client.user.id}&scope=bot%20applications.commands&permissions=4331719680&guild_id=${req.query?.guildId}&redirect_uri=${encodeURIComponent(config['callback-url'])}`
+            `https://discord.com/oauth2/authorize?client_id=${
+                client.user.id
+            }&scope=bot%20applications.commands&permissions=4331719680&guild_id=${
+                req.query?.guildId
+            }&redirect_uri=${encodeURIComponent(config['callback-url'])}`
         );
     });
 

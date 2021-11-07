@@ -18,19 +18,22 @@ export const listener: EventListener<'ready'> = {
                 serverCount: client.guilds.cache.size,
                 shardCount: client.shard?.count ?? 1
             });
-            
-            await fetch(`https://discord.bots.gg/api/v1/bots/${client.user.id}/stats`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': process.env.DISCORDBOTS_API_TOKEN
-                },
-                body: JSON.stringify({
-                    guildCount: client.guilds.cache.size,
-                    shardCount: client.shard?.count ?? 1,
-                    shardId: 1
-                })
-            });
+
+            await fetch(
+                `https://discord.bots.gg/api/v1/bots/${client.user.id}/stats`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: process.env.DISCORDBOTS_API_TOKEN
+                    },
+                    body: JSON.stringify({
+                        guildCount: client.guilds.cache.size,
+                        shardCount: client.shard?.count ?? 1,
+                        shardId: 1
+                    })
+                }
+            );
         }, 1800000);
     }
 };

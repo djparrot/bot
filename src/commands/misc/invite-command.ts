@@ -8,7 +8,9 @@ export const command: Command = {
         .setDescription('Gives you the bot invite link'),
     run(client, interaction) {
         const embed = createEmbed()
-            .setTitle(`<:DJParrot:801150789829394442> Add ${client.user.username}`)
+            .setTitle(
+                `<:DJParrot:801150789829394442> Add ${client.user.username}`
+            )
             .setURL(
                 `https://discord.com/oauth2/authorize?client_id=${client.user.id}&scope=bot%20applications.commands&permissions=4331719680`
             );
