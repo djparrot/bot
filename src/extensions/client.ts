@@ -133,7 +133,7 @@ export default class Client extends DiscordClient {
 
     deleteQueue(guild: GuildResolvable) {
         guild = this.guilds.resolve(guild);
-        if (!guild) throw new Error('Unknown Guild');
+        if (!guild) return new Error('Unknown Guild');
         const prev = this.getQueue(guild);
 
         try {

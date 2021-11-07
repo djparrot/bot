@@ -1,5 +1,8 @@
 import { stripColors } from 'colors';
+import { TextChannel } from 'discord.js';
 import { createWriteStream, readFileSync } from 'fs';
+import { Client } from '../extensions';
+import config from '../../config.json';
 
 export default class Logger {
     private file = `./logs/${new Date()
@@ -59,6 +62,9 @@ export default class Logger {
             text.join(' ').cyan
         ].join(' ');
 
+        (
+            Client.instance.channels.cache.get(config['logs']) as TextChannel
+        ).send(stripColors(log));
         this.stream.write(stripColors(log) + '\n');
         console.log(log);
     }

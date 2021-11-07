@@ -4,5 +4,10 @@
     "website-url": "",
     "callback-url": "",
     "premium-role": "",
-    "voter-role": ""
+    "voter-role": "",
+    "guild-channel": "",
+    "vote-channel": "",
+    "premium-channel": "",
+    "shards-channel": "",
+    "logs": ""
 }

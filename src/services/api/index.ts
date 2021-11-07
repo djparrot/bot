@@ -48,7 +48,7 @@ export default async function api(client: Client) {
                 client_secret: process.env.DISCORD_SECRET,
                 grant_type: 'authorization_code',
                 code: req.query.code as string,
-                redirect_uri: encodeURIComponent(config['callback-url'])
+                redirect_uri: config['callback-url']
             })
         })
             .then((r) => r.json())
@@ -187,7 +187,7 @@ export default async function api(client: Client) {
                 )
                 .setFooter('Thank you for your support!');
             (
-                client.channels.cache.get('800304312471388181') as TextChannel
+                client.channels.cache.get(config['vote-channel']) as TextChannel
             ).send({ embeds: [embed] });
             user.send(
                 `Thanks for voting!\nTo thank you, I offer you 12h of ${client.user.username} premium!\nHave a good day`
@@ -225,7 +225,7 @@ export default async function api(client: Client) {
                 if (member.paid)
                     (
                         client.channels.cache.get(
-                            '779670042848788490'
+                            config['premium-channel']
                         ) as TextChannel
                     ).send({ embeds: [embed] });
                 await client.db.updateUser(user.id, {
