@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import { TextChannel } from 'discord.js';
 import Topgg from '@top-gg/sdk';
@@ -8,6 +9,7 @@ import { Client } from '../../extensions';
 import { playlistModel, userModel } from '../../models';
 import { createEmbed } from '../../utils';
 import config from '../../../config.json';
+console.log(config);
 
 const app = express();
 const TopggWebhook = new Topgg.Webhook(process.env.TOPGG_WEBHOOK_AUTH);
@@ -161,7 +163,8 @@ export default async function api(client: Client) {
     });
 
     app.post('/user', async (req, res) => {
-        const user = await client.users.fetch(req.query.id as string);
+        let user = client.users.cache.get(req.query.id as string);
+        if (!user) user = await client.users.fetch(req.query.id as string);
         if (!user) return res.sendStatus(404);
         const dbUser = await client.db.getUser(req.query.id as string);
         res.send({
