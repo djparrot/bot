@@ -9,10 +9,10 @@ export default class Logger {
     private stream: WriteStream;
 
     constructor() {
-        this.stream = createWriteStream(this.file);
         this.file = `./logs/${new Date()
             .toLocaleDateString()
             .replace(/\//g, '-')}.log`;
+        this.stream = createWriteStream(this.file);
 
         let file: Buffer;
         try {
