@@ -20,10 +20,11 @@ export const listener: EventListener<'guildDelete'> = {
                 },
                 {
                     name: `👥Members:`,
-                    value: (guild.members.cache.size > guild.memberCount
-                        ? guild.members.cache.size
-                        : guild.memberCount
-                    ).toString(),
+                    value:
+                        (guild.members.cache.size > guild.memberCount
+                            ? guild.members.cache.size
+                            : guild.memberCount
+                        )?.toString() ?? '0',
                     inline: true
                 },
                 {

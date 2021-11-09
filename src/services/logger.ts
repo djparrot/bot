@@ -1,21 +1,39 @@
 import { stripColors } from 'colors';
 import { TextChannel } from 'discord.js';
-import { createWriteStream, readFileSync } from 'fs';
+import { createWriteStream, readFileSync, WriteStream } from 'fs';
 import { Client } from '../extensions';
 import config from '../../config.json';
 
 export default class Logger {
-    private file = `./logs/${new Date()
-        .toLocaleDateString()
-        .replace(/\//g, '-')}.log`;
-    private stream = createWriteStream(this.file);
+    private file: string;
+    private stream: WriteStream;
 
     constructor() {
+        this.stream = createWriteStream(this.file);
+        this.file = `./logs/${new Date()
+            .toLocaleDateString()
+            .replace(/\//g, '-')}.log`;
+
         let file: Buffer;
         try {
             file = readFileSync(this.file);
         } catch (ignored) {}
         if (file) this.stream.write(file.toString('utf8'));
+
+        setInterval(() => {
+            if (
+                this.file ===
+                `./logs/${new Date()
+                    .toLocaleDateString()
+                    .replace(/\//g, '-')}.log`
+            )
+                return;
+            this.stream.end();
+            this.file = `./logs/${new Date()
+                .toLocaleDateString()
+                .replace(/\//g, '-')}.log`;
+            this.stream = createWriteStream(this.file);
+        }, 60 * 1000);
     }
 
     private static _getInfo() {
@@ -26,7 +44,7 @@ export default class Logger {
             const lines = <string[]>e.stack.split('\n');
             const line = lines[3];
             const matched = line.match(/([\w\d\-_.\/]*:\d+:\d+)/);
-            info = matched[1].split('djparrot/')[1];
+            info = matched[1].split('bot/')[1];
         }
         return info;
     }

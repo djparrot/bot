@@ -67,7 +67,8 @@ export default class Client extends DiscordClient {
         logger.log(`Logged in as ${this.user.tag}!`);
 
         logger.log('Connecting to the database...'.italic.magenta);
-        await this.db.connect();
+        const dbConnected = await this.db.connect();
+        if (!dbConnected) throw new Error('Failed to connect to the database!');
         logger.log('Database connected!');
 
         logger.log('Registering commands...'.italic.magenta);
@@ -76,9 +77,11 @@ export default class Client extends DiscordClient {
 
         logger.log('Loading spotify api...'.italic.magenta);
         const spt = await this._getSpotifyToken();
+        if (spt instanceof Error) throw spt;
         this.spotifyApi.setAccessToken(spt.accessToken);
         setInterval(async () => {
             const token = await this._getSpotifyToken();
+            if (token instanceof Error) return;
             this.spotifyApi.setAccessToken(token.accessToken);
         }, spt.expiresIn * 1000);
         logger.log('Spotify api loaded!');
@@ -98,11 +101,14 @@ export default class Client extends DiscordClient {
                 ).toString('base64')}`,
                 'Content-Type': 'application/x-www-form-urlencoded'
             }
-        });
+        }).catch(() => {});
+        // @ts-ignore
+        if (!res?.data?.token_type)
+            return new Error('Failed to get spotify token!');
         const data = {
-            tokenType: res.data.token_type,
-            accessToken: res.data.access_token,
-            expiresIn: res.data.expires_in
+            tokenType: res.data.token_type as string,
+            accessToken: res.data.access_token as string,
+            expiresIn: res.data.expires_in as number
         };
         return data;
     }

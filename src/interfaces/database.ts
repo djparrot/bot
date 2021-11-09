@@ -3,7 +3,7 @@ import { GuildDB, UserDB } from '../models';
 export default interface Database {
     connected: boolean;
 
-    connect(): Promise<void>;
+    connect(): Promise<boolean>;
 
     createUser(userId: string): Promise<UserDB>;
     getUser(userId: string): Promise<UserDB>;

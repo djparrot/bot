@@ -33,7 +33,7 @@ export const listener: EventListener<'ready'> = {
                         shardId: 1
                     })
                 }
-            );
+            ).catch(() => {});
         }, 1800000);
     }
 };

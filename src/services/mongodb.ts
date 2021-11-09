@@ -9,12 +9,17 @@ export default class MongoDB implements Database {
         this.connected = false;
     }
 
-    public async connect(): Promise<void> {
-        await connect(process.env.MONGO_URI!);
-        this.connected = true;
+    public async connect() {
+        try {
+            await connect(process.env.MONGO_URI);
+            this.connected = true;
+        } catch (error) {
+            this.connected = false;
+        }
+        return this.connected;
     }
 
-    public async getUser(userId: string): Promise<UserDB> {
+    public async getUser(userId: string) {
         if (!this.connected) throw new Error('Not connected to the database');
         let data = (await userModel.findOne({ _id: userId })) as UserDB;
         if (!data) {
@@ -23,17 +28,17 @@ export default class MongoDB implements Database {
         return data;
     }
 
-    public async updateUser(userId: string, options: UserDB): Promise<void> {
+    public async updateUser(userId: string, options: UserDB) {
         if (!this.connected) throw new Error('Not connected to the database');
         await userModel.updateOne({ _id: userId }, { $set: options });
     }
 
-    public async deleteUser(userId: string): Promise<void> {
+    public async deleteUser(userId: string) {
         if (!this.connected) throw new Error('Not connected to the database');
         await userModel.deleteOne({ _id: userId });
     }
 
-    public async createUser(userId: string): Promise<UserDB> {
+    public async createUser(userId: string) {
         if (!this.connected) throw new Error('Not connected to the database');
         let data = new userModel({
             _id: userId
@@ -41,7 +46,7 @@ export default class MongoDB implements Database {
         return await data.save();
     }
 
-    public async getGuild(guildId: string): Promise<GuildDB> {
+    public async getGuild(guildId: string) {
         if (!this.connected) throw new Error('Not connected to the database');
         let data = (await guildModel.findOne({ _id: guildId })) as GuildDB;
         if (!data) {
@@ -50,17 +55,17 @@ export default class MongoDB implements Database {
         return data;
     }
 
-    public async updateGuild(guildId: string, options: GuildDB): Promise<void> {
+    public async updateGuild(guildId: string, options: GuildDB) {
         if (!this.connected) throw new Error('Not connected to the database');
         await guildModel.updateOne({ _id: guildId }, { $set: options });
     }
 
-    public async deleteGuild(guildId: string): Promise<void> {
+    public async deleteGuild(guildId: string) {
         if (!this.connected) throw new Error('Not connected to the database');
         await guildModel.deleteOne({ _id: guildId });
     }
 
-    public async createGuild(guildId: string): Promise<GuildDB> {
+    public async createGuild(guildId: string) {
         if (!this.connected) throw new Error('Not connected to the database');
         let data = new guildModel({
             _id: guildId
