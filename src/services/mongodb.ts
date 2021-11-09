@@ -10,13 +10,8 @@ export default class MongoDB implements Database {
     }
 
     public async connect() {
-        try {
-            await connect(process.env.MONGO_URI);
-            this.connected = true;
-        } catch (error) {
-            this.connected = false;
-        }
-        return this.connected;
+        await connect(process.env.MONGO_URI!);
+        this.connected = true;
     }
 
     public async getUser(userId: string) {
